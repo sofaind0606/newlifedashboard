@@ -1,0 +1,852 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LifeDashboard | Home</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --color-primary: #E59B90;
+            --color-primary-dark: #c97b6f;
+            --color-primary-light: #f7c7bf;
+            --color-secondary: #A4A884;
+            --color-secondary-dark: #8a8e6c;
+            --color-secondary-light: #d0d4b6;
+            --color-accent: #620607;
+            --color-text: #620607;
+            --color-text-light: #8a3a3c;
+            --color-text-muted: #b57a7c;
+            --color-nav: #E59B90;
+            --color-border: #A4A884;
+            --color-border-light: #d0d4b6;
+            --color-bg: #F9FBED;
+            --color-bg-alt: #ffffff;
+            --shadow-sm: 0 2px 8px rgba(98, 6, 7, 0.05);
+            --shadow-md: 0 4px 15px rgba(98, 6, 7, 0.08);
+            --shadow-lg: 0 10px 30px rgba(98, 6, 7, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--color-bg); min-height: 100vh; color: var(--color-text); }
+        
+        .app-layout { display: flex; min-height: 100vh; }
+        .nav-frame {
+            width: 18%;
+            min-width: 200px;
+            background: #E59B90;
+            padding: 24px 16px;
+            border-right: 2px solid var(--color-primary);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 4px 0 20px rgba(198, 61, 77, 0.15);
+        }
+        .logo { margin-bottom: 16px; padding: 12px; border-bottom: 2px solid #ffffff; text-align: center; background: rgba(255, 255, 255, 0.1); border-radius: 12px; }
+        .logo h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; margin: 0; }
+        .logo p { color: var(--color-bg); font-size: 0.75rem; margin-top: 2px; opacity: 0.9; }
+        .nav-section { margin-bottom: 20px; }
+        .nav-title { color: rgba(255,255,255,0.7); font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; padding-left: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: whitesmoke; text-decoration: none; border-radius: var(--radius-md); margin-bottom: 4px; transition: var(--transition); font-weight: 600; }
+        .nav-item:hover { background: var(--color-primary); color: #BA494B; transform: translateX(4px); }
+        .nav-item.active { background: #BA494B; color: whitesmoke; font-weight: 700; }
+        
+        .content-area { flex: 1; margin-left: 18%; padding: 24px 32px; }
+        .main-grid { display: grid; grid-template-columns: 1fr 350px; gap: 24px; }
+        .main-left { display: flex; flex-direction: column; gap: 24px; }
+        .main-right { display: flex; flex-direction: column; gap: 24px; }
+        
+        .user-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--color-bg-alt); border-radius: var(--radius-lg); margin-bottom: 20px; border: 2px solid var(--color-border); }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+        .user-name { font-weight: 600; color: var(--color-text); }
+        .user-email { font-size: 0.8em; color: var(--color-text-light); }
+        .logout-btn { background: var(--color-bg); color: var(--color-primary); border: 2px solid var(--color-border); padding: 8px 16px; border-radius: var(--radius-xl); cursor: pointer; font-size: 0.85em; font-weight: 600; }
+        .logout-btn:hover { background: var(--color-primary); color: white; }
+        
+        .card { background: var(--color-bg-alt); border-radius: var(--radius-lg); padding: 20px; border: 2px solid var(--color-border); box-shadow: var(--shadow-sm); }
+        .card h2 { color: var(--color-nav); font-size: 1.2em; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--color-border); font-weight: 700; }
+        
+        .reminder-quote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .reminder-block { background: #D1DDB5; border-radius: var(--radius-lg); padding: 20px; border: 2px solid var(--color-secondary); }
+        .reminder-block h3 { color: var(--color-text); margin-bottom: 12px; font-weight: 700; }
+        .reminder-block ul { list-style: none; }
+        .reminder-block li { padding: 8px 0; border-bottom: 1px solid var(--color-border); font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .reminder-block li:last-child { border-bottom: none; }
+        .reminder-block li::before { content: '✓'; width: 20px; height: 20px; background: var(--color-secondary); color: white; border-radius: 50%; font-size: 0.7em; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        
+        .quote-block { background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-alt) 100%); border-radius: var(--radius-lg); padding: 20px; border: 2px solid var(--color-border); position: relative; }
+        .quote-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .quote-title { font-size: 1.1em; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .quote-add-btn { background: var(--color-bg); color: var(--color-primary); border: 2px solid var(--color-border); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1.2em; font-weight: 700; }
+        .quote-add-btn:hover { background: var(--color-primary); color: white; transform: rotate(90deg); }
+        .quote-display { background: rgba(255, 255, 255, 0.7); border-radius: var(--radius-md); padding: 20px; border-left: 4px solid var(--color-primary); min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+        .quote-text { font-style: italic; color: var(--color-text); line-height: 1.6; margin-bottom: 10px; }
+        .quote-author { font-size: 0.85em; color: var(--color-text-light); font-weight: 600; text-align: right; }
+        .quote-placeholder { color: var(--color-text-muted); font-style: italic; text-align: center; }
+        
+        .habit-day-list { display: flex; flex-direction: column; gap: 10px; }
+        .habit-day-item { background: var(--color-bg-alt); padding: 12px 16px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 12px; border: 2px solid var(--color-border); font-weight: 500; transition: var(--transition); }
+        .habit-day-item:hover { transform: translateX(4px); box-shadow: var(--shadow-sm); border-color: var(--color-primary); background: var(--color-primary-light); }
+        .habit-day-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-primary); cursor: pointer; }
+        
+        .task-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius-md); margin-bottom: 8px; border: 2px solid var(--color-border); background: var(--color-bg-alt); }
+        .task-checkbox { width: 18px; height: 18px; accent-color: var(--color-primary); }
+        .task-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .task-time-range { font-size: 0.7em; font-weight: 600; color: var(--color-primary); }
+        .task-text { font-size: 0.95em; font-weight: 500; color: var(--color-text); }
+        .task-text.completed { text-decoration: line-through; opacity: 0.6; }
+        .task-category { font-size: 0.7em; padding: 2px 8px; border-radius: var(--radius-sm); font-weight: 600; }
+        .delete-task-btn { background: var(--color-nav); border: none; padding: 3px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.7em; color: white; }
+        .category-work { background: var(--color-primary); color: white; }
+        .category-study { background: var(--color-nav); color: white; }
+        .category-hobby { background: var(--color-primary-light); color: var(--color-text); }
+        .category-rest { background: var(--color-secondary); color: white; }
+        .category-sport { background: var(--color-secondary-dark); color: white; }
+        
+        .mini-calendar { background: var(--color-bg-alt); border-radius: var(--radius-lg); padding: 20px; border: 2px solid var(--color-border); }
+        .mini-calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .mini-calendar-header button { background: var(--color-bg); color: var(--color-primary); border: 2px solid var(--color-border); padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; font-size: 0.9em; transition: var(--transition); }
+        .mini-calendar-header button:hover { background: var(--color-primary); color: white; border-color: var(--color-primary); transform: translateY(-2px); }
+        .mini-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+        .mini-calendar-day { padding: 10px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 500; font-size: 0.9em; transition: var(--transition); }
+        .mini-calendar-day:hover { background: var(--color-primary-light); }
+        .mini-calendar-day.selected { background: var(--color-primary); color: white; box-shadow: var(--shadow-sm); }
+        .mini-calendar-day.empty { opacity: 0.3; cursor: default; }
+        .mini-calendar-day.empty:hover { background: transparent; }
+        
+        .today-btn {
+            margin-top: 16px;
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95em;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+        .today-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-primary) 100%); }
+        
+        .hobby-randomizer { background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-alt) 100%); border-radius: var(--radius-lg); padding: 24px; border: 2px solid var(--color-border); text-align: center; }
+        .hobby-title { font-size: 1.1em; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .hobby-display { background: rgba(255, 255, 255, 0.8); border-radius: var(--radius-lg); padding: 30px 20px; margin-bottom: 20px; border: 2px dashed var(--color-border); min-height: 120px; display: flex; align-items: center; justify-content: center; }
+        .hobby-display.animating { animation: pulse 0.5s ease infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .hobby-result { font-size: 1.3em; font-weight: 700; }
+        .hobby-result-icon { font-size: 2.5em; display: block; margin-bottom: 10px; }
+        .hobby-placeholder { color: var(--color-text-muted); font-style: italic; }
+        .hobby-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .hobby-btn { padding: 12px 24px; border: none; border-radius: var(--radius-xl); cursor: pointer; font-weight: 600; }
+        .hobby-btn-primary { background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%); color: white; }
+        .hobby-btn-secondary { background: var(--color-bg); color: var(--color-primary); border: 2px solid var(--color-border); }
+        
+        .motivation-images { background: linear-gradient(135deg, rgba(229, 155, 144, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%); border-radius: var(--radius-lg); padding: 20px; border: 2px solid var(--color-border); position: relative; overflow: hidden; }
+        .motivation-images::before { content: '⭐⭐'; position: absolute; top: 15px; right: 15px; font-size: 1.8em; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); z-index: 2; }
+        .motivation-title { font-size: 1.1em; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .motivation-settings-btn { background: var(--color-bg); color: var(--color-primary); border: 2px solid var(--color-border); padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.8em; z-index: 3; position: relative; }
+        .motivation-settings-btn:hover { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+       /* ========== НАЙДИТЕ И ЗАМЕНИТЕ ЭТО ========== */
+
+.motivation-grid { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 5px;  /* ✅ ОТСТУП МЕЖДУ КАРТИНКАМИ */
+    padding: 15px;  /* ✅ ОТСТУП ПО КРАЯМ */
+    border: 2px solid var(--color-border); 
+    border-radius: var(--radius-lg); 
+    overflow: visible; 
+}
+
+.motivation-img-card { 
+    position: relative; 
+    border-radius: var(--radius-md); 
+    overflow: hidden; 
+    aspect-ratio: 1; 
+    border: 2px solid var(--color-border-light); 
+    transition: var(--transition); 
+    box-shadow: var(--shadow-sm); 
+}
+
+.motivation-img-card:hover { 
+    transform: scale(1.05); 
+    z-index: 1; 
+    box-shadow: var(--shadow-md); 
+}
+
+/* ============================================ */
+        .motivation-img-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .motivation-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--color-primary-light); color: var(--color-text-muted); font-size: 2em; flex-direction: column; gap: 8px; }
+        .motivation-img-placeholder span { font-size: 0.6em; font-weight: 600; }
+        .motivation-add-btn { background: var(--color-secondary); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 1.5em; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .motivation-add-btn:hover { background: var(--color-secondary-dark); transform: scale(1.1); }
+        .motivation-img-delete { position: absolute; top: 8px; right: 8px; background: rgba(231, 76, 60, 0.9); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; opacity: 0; transition: var(--transition); z-index: 2; }
+        .motivation-img-card:hover .motivation-img-delete { opacity: 1; }
+        .motivation-img-delete:hover { background: #e74c3c; transform: scale(1.1); }
+        
+        .empty-state { color: var(--color-text-light); background: var(--color-primary-light); border: 2px dashed var(--color-border); padding: 30px; border-radius: var(--radius-lg); text-align: center; }
+        
+        /* ========== FAB BUTTON ========== */
+        .fab-add-task {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 2em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            z-index: 999;
+        }
+        .fab-add-task:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 20px rgba(229, 155, 144, 0.5);
+        }
+        .fab-add-task:active {
+            transform: scale(1.05);
+        }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(198, 61, 77, 0.5); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: var(--radius-xl); padding: 30px; width: 100%; max-width: 500px; border: 2px solid var(--color-border); box-shadow: var(--shadow-lg); max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--color-border); }
+        .modal-header h3 { color: var(--color-primary); font-weight: 700; margin: 0; }
+        .close-modal { background: none; border: none; font-size: 1.6em; cursor: pointer; color: var(--color-primary); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--color-primary); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; background: var(--color-bg); border: 2px solid var(--color-border); border-radius: var(--radius-md); }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .file-input-wrapper { position: relative; overflow: hidden; width: 100%; }
+        .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .file-input-btn { display: block; width: 100%; padding: 12px 16px; background: var(--color-bg); border: 2px dashed var(--color-border); border-radius: var(--radius-md); text-align: center; cursor: pointer; color: var(--color-text-light); }
+        .hobby-list-edit { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; max-height: 200px; overflow-y: auto; }
+        .hobby-edit-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--color-bg); border-radius: var(--radius-md); }
+        .hobby-edit-item input { flex: 1; border: none; background: transparent; }
+        .hobby-edit-item button { padding: 6px 12px; background: var(--color-primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; }
+        .save-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%); color: white; border: none; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; }
+        @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 768px) { 
+            .app-layout { flex-direction: column; } 
+            .nav-frame { width: 100%; height: auto; position: relative; } 
+            .content-area { margin-left: 0; } 
+            .reminder-quote-grid { grid-template-columns: 1fr; }
+            .fab-add-task { bottom: 20px; right: 20px; width: 56px; height: 56px; font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="nav-frame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
+            <div class="nav-section"><div class="nav-title">MAIN</div><a href="index.html" class="nav-item active">🏠 Home</a><a href="day.html" class="nav-item">📆 Day Planner</a></div>
+            <div class="nav-section"><div class="nav-title">PLANNING</div><a href="week.html" class="nav-item">📋 Week Planner</a><a href="month.html" class="nav-item">🗓️ Month Calendar</a><a href="year.html" class="nav-item">🎯 Year Goals</a></div>
+            <div class="nav-section"><div class="nav-title">TRACKERS</div><a href="habits.html" class="nav-item">🔥 Habit Tracker</a><a href="finance.html" class="nav-item">💰 Finance Tracker</a><a href="media.html" class="nav-item">📚🎬 Books & Movies</a><a href="study.html" class="nav-item">📚 Study Tasks</a><a href="pomodoro.html" class="nav-item">🍅 Pomodoro Timer</a></div>
+        </nav>
+        <div class="content-area">
+            <div class="user-header">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">👤</div>
+                    <div><div class="user-name" id="userName">Loading...</div><div class="user-email" id="userEmail"></div></div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
+            </div>
+            <div class="main-grid">
+                <div class="main-left">
+                    <div class="reminder-quote-grid">
+                        <div class="reminder-block">
+                            <h3>💧 Daily Reminders</h3>
+                            <ul>
+                                <li>💧 Drink 8 glasses of water</li>
+                                <li>🧘 Take 5 deep breaths</li>
+                                <li>🚶 Quick stretch break</li>
+                                <li>📱 Screen-free moment</li>
+                            </ul>
+                        </div>
+                        <div class="quote-block">
+                            <div class="quote-header">
+                                <div class="quote-title"><span>💭</span><span>Quote of the Day</span></div>
+                                <button class="quote-add-btn" onclick="openQuoteModal()">+</button>
+                            </div>
+                            <div class="quote-display" id="quoteDisplay">
+                                <div class="quote-placeholder">Click "+" to add your favorite quote!</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>⭐ Today's Habits</h2>
+                        <div id="todayHabitsList" class="habit-day-list"></div>
+                    </div>
+                    <div class="card">
+                        <h2>✅ Today's Tasks</h2>
+                        <div id="todayTasksList"></div>
+                    </div>
+                    <div class="card">
+                        <h2>🎨 Hobby Generator</h2>
+                        <div class="hobby-randomizer">
+                            <div class="hobby-title"><span>🎲</span><span>Discover a new hobby</span></div>
+                            <div class="hobby-display" id="hobbyDisplay">
+                                <div class="hobby-placeholder">Click "Spin" to find your next hobby!</div>
+                            </div>
+                            <div class="hobby-buttons">
+                                <button class="hobby-btn hobby-btn-primary" onclick="spinHobby()"><span>🎰</span><span>Spin!</span></button>
+                                <button class="hobby-btn hobby-btn-secondary" onclick="openHobbySettings()"><span>⚙️</span><span>Settings</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="main-right">
+                    <!-- ✅ ПЕРЕМЕСТИЛИ MOOD BOARD НАВЕРХ -->
+                    <div class="card motivation-images" style="margin-bottom:24px;">
+                        <div class="motivation-title">
+                            <!-- ✅ ИЗМЕНИЛИ НАЗВАНИЕ -->
+                            <span>🎨 Mood Board</span>
+                            <button class="motivation-settings-btn" onclick="openMotivationSettings()">⚙️</button>
+                        </div>
+                        <div class="motivation-grid" id="motivationGrid"></div>
+                    </div>
+                    
+                    <!-- ✅ ПЕРЕМЕСТИЛИ КАЛЕНДАРЬ ВНИЗ -->
+                    <div class="mini-calendar">
+                        <div class="mini-calendar-header">
+                            <button onclick="prevMiniMonth()">◀</button>
+                            <span id="miniMonthYear" style="font-weight:700;color:var(--color-text);"></span>
+                            <button onclick="nextMiniMonth()">▶</button>
+                        </div>
+                        <div class="mini-calendar-grid" id="miniCalendarGrid"></div>
+                        <button class="today-btn" onclick="goToTodayMini()">
+                            <span>📅</span>
+                            <span>Today</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab-add-task" onclick="openAddTaskModal()" title="Add Task">+</button>
+
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">➕ New Task</h3>
+                <button class="close-modal" onclick="closeTaskModal()">✖</button>
+            </div>
+            <div class="form-group">
+                <label>Task Title</label>
+                <input type="text" id="newTaskTitle" placeholder="What needs to be done?">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="newTaskDate">
+            </div>
+            <div class="form-group">
+                <label>Time (optional)</label>
+                <input type="time" id="newTaskTime">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="newTaskCategory">
+                    <option value="work">💼 Work</option>
+                    <option value="study">📚 Study</option>
+                    <option value="hobby">🎨 Hobby</option>
+                    <option value="rest">😌 Rest</option>
+                    <option value="family">👨‍👩‍👧 Family</option>
+                    <option value="sport">⚽ Sport</option>
+                    <option value="selfdev">🌱 Self-Development</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="newTaskNotes" placeholder="Additional details..."></textarea>
+            </div>
+            <button class="save-btn" onclick="saveNewTask()">💾 Save</button>
+        </div>
+    </div>
+
+    <div id="hobbyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>⚙️ Hobby Settings</h3><button class="close-modal" onclick="closeHobbyModal()">✖</button></div>
+            <div class="form-group">
+                <label>Add New Hobby</label>
+                <div style="display:flex;gap:10px;">
+                    <input type="text" id="newHobbyInput" placeholder="Hobby name...">
+                    <input type="text" id="newHobbyIcon" placeholder="Icon" style="max-width:80px;">
+                    <button onclick="addHobbyToList()" style="padding:12px 20px;background:var(--color-primary);color:white;border:none;border-radius:var(--radius-md);cursor:pointer;font-weight:600;">➕</button>
+                </div>
+            </div>
+            <div class="hobby-list-edit" id="hobbyListEdit"></div>
+            <button class="save-btn" onclick="saveHobbySettings()">💾 Save</button>
+        </div>
+    </div>
+
+    <div id="motivationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>🖼️ Motivation Photos</h3><button class="close-modal" onclick="closeMotivationModal()">✖</button></div>
+            <div class="form-group">
+                <label>Upload Photo (max 4)</label>
+                <div class="file-input-wrapper">
+                    <div class="file-input-btn">📁 Choose Photo</div>
+                    <input type="file" id="newMotivationFile" accept="image/*" onchange="handleMotivationFile(this)">
+                </div>
+            </div>
+            <div class="hobby-list-edit" id="motivationListEdit"></div>
+            <button class="save-btn" onclick="saveMotivationSettings()">💾 Save</button>
+        </div>
+    </div>
+
+    <div id="quoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>💭 Add Quote</h3><button class="close-modal" onclick="closeQuoteModal()">✖</button></div>
+            <div class="form-group">
+                <label>Quote Text</label>
+                <textarea id="quoteText" placeholder="Your favorite quote..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Author (optional)</label>
+                <input type="text" id="quoteAuthor" placeholder="Author name">
+            </div>
+            <button class="save-btn" onclick="saveQuote()">💾 Save</button>
+        </div>
+    </div>
+
+    <script>
+        let allTasks = JSON.parse(localStorage.getItem('allTasks')) || {};
+        let habitsData = JSON.parse(localStorage.getItem('habitsData')) || { habits: [] };
+        let hobbyList = JSON.parse(localStorage.getItem('hobbyList')) || [
+            { name: 'Reading', icon: '📚' }, { name: 'Drawing', icon: '🎨' },
+            { name: 'Cooking', icon: '🍳' }, { name: 'Gardening', icon: '🌱' },
+            { name: 'Photography', icon: '📷' }, { name: 'Writing', icon: '✍️' },
+            { name: 'Hiking', icon: '🥾' }, { name: 'Music', icon: '🎵' },
+            { name: 'Yoga', icon: '🧘' }, { name: 'Crafts', icon: '✂️' }
+        ];
+        let motivationImages = JSON.parse(localStorage.getItem('motivationImages')) || [];
+        let quoteOfTheDay = JSON.parse(localStorage.getItem('quoteOfTheDay')) || null;
+        let miniCurrentMonth = new Date().getMonth();
+        let miniCurrentYear = new Date().getFullYear();
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let firebaseReady = false;
+        let db = null;
+        let currentUser = null;
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I",
+            authDomain: "lifedashbord.firebaseapp.com",
+            projectId: "lifedashbord",
+            storageBucket: "lifedashbord.appspot.com",
+            messagingSenderId: "206574362724",
+            appId: "1:206574362724:web:83887cae4dc87b41137f71"
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initFirebase();
+            
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'allTasks') { allTasks = JSON.parse(e.newValue) || {}; renderTodayTasks(); }
+                if (e.key === 'habitsData') { habitsData = JSON.parse(e.newValue) || { habits: [] }; renderTodayHabits(); }
+                if (e.key === 'motivationImages') { motivationImages = JSON.parse(e.newValue) || []; renderMotivationImages(); }
+                if (e.key === 'quoteOfTheDay') { quoteOfTheDay = JSON.parse(e.newValue) || null; renderQuote(); }
+            });
+            
+            setInterval(function() {
+                const storedTasks = localStorage.getItem('allTasks');
+                const storedHabits = localStorage.getItem('habitsData');
+                if (storedTasks && JSON.stringify(allTasks) !== storedTasks) { allTasks = JSON.parse(storedTasks); renderTodayTasks(); }
+                if (storedHabits && JSON.stringify(habitsData) !== storedHabits) { habitsData = JSON.parse(storedHabits); renderTodayHabits(); }
+            }, 1000);
+            
+            renderTodayHabits();
+            renderTodayTasks();
+            renderMiniCalendar();
+            renderHobbyDisplay();
+            renderMotivationImages();
+            renderQuote();
+        });
+        
+        function initFirebase() {
+            var firebaseTimeout = setTimeout(function() { firebaseReady = false; }, 5000);
+            try {
+                if (typeof firebase === 'undefined') { clearTimeout(firebaseTimeout); return; }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                var auth = firebase.auth();
+                auth.onAuthStateChanged(function(user) {
+                    clearTimeout(firebaseTimeout);
+                    if (user) {
+                        currentUser = user; firebaseReady = true;
+                        document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0] || 'User';
+                        document.getElementById('userEmail').textContent = user.email || '';
+                        document.getElementById('userAvatar').textContent = (user.displayName ? user.displayName[0] : user.email[0] || 'U').toUpperCase();
+                        loadUserData(user.uid);
+                    } else { window.location.href = 'auth.html'; }
+                });
+            } catch (e) { console.error('Firebase error:', e); clearTimeout(firebaseTimeout); firebaseReady = false; }
+        }
+        
+        function loadUserData(uid) {
+            if (!db) return;
+            
+            // ✅ ЗАГРУЗКА ЦИТАТЫ ИЗ FIREBASE
+            db.collection('users').doc(uid).collection('settings').doc('quote').get().then(function(doc) {
+                if (doc.exists) {
+                    quoteOfTheDay = doc.data();
+                    localStorage.setItem('quoteOfTheDay', JSON.stringify(quoteOfTheDay));
+                    renderQuote();
+                }
+            });
+            
+            // ✅ ЗАГРУЗКА MOOD BOARD ИЗ FIREBASE
+            db.collection('users').doc(uid).collection('settings').doc('motivation').get().then(function(doc) {
+                if (doc.exists) {
+                    motivationImages = doc.data().images || [];
+                    localStorage.setItem('motivationImages', JSON.stringify(motivationImages));
+                    renderMotivationImages();
+                }
+            });
+            
+            db.collection('users').doc(uid).collection('tasks').get().then(function(tasksSnap) {
+                allTasks = {};
+                tasksSnap.forEach(function(doc) { allTasks[doc.id] = doc.data(); });
+                localStorage.setItem('allTasks', JSON.stringify(allTasks));
+                renderTodayTasks();
+            });
+            
+            db.collection('users').doc(uid).collection('habits').doc('data').get().then(function(habitsSnap) {
+                if (habitsSnap.exists) { 
+                    habitsData = habitsSnap.data(); 
+                    localStorage.setItem('habitsData', JSON.stringify(habitsData)); 
+                    renderTodayHabits(); 
+                }
+            });
+        }
+        
+        function escapeHtml(s) { if (!s) return ''; return s.replace(/[&<>"]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]); }); }
+        function getCategoryClass(c) { const m = { work: 'category-work', study: 'category-study', hobby: 'category-hobby', rest: 'category-rest', family: 'category-family', sport: 'category-sport', selfdev: 'category-selfdev' }; return m[c] || 'category-work'; }
+        function getCategoryIcon(c) { const i = { work: '💼', study: '📚', hobby: '🎨', rest: '😌', family: '👨‍👩‍👧', sport: '⚽', selfdev: '🌱' }; return i[c] || '📌'; }
+        function formatTimeRange(s, e) { if (!s && !e) return ''; if (s && !e) return s; if (!s && e) return '— ' + e; return s + ' — ' + e; }
+        
+        function renderTodayHabits() {
+            const c = document.getElementById('todayHabitsList');
+            const today = new Date().toISOString().split('T')[0];
+            const todayDay = new Date().getDay();
+            c.innerHTML = '';
+            if (!habitsData.habits || habitsData.habits.length === 0) {
+                c.innerHTML = '<div class="empty-state"><p>No habits yet. Add some in the Habit Tracker!</p></div>';
+                return;
+            }
+            habitsData.habits.forEach(function(h) {
+                if (!h.days.includes(todayDay)) return;
+                const k = h.id + '_' + today;
+                const done = h.completed && h.completed[today] || false;
+                const d = document.createElement('div');
+                d.className = 'habit-day-item';
+                d.innerHTML = '<input type="checkbox" ' + (done ? 'checked' : '') + ' onchange="toggleHabitToday(\'' + h.id + '\',\'' + today + '\',this.checked)"><span>' + escapeHtml(h.name) + '</span>';
+                c.appendChild(d);
+            });
+        }
+        
+        window.toggleHabitToday = function(id, date, chk) {
+            const habit = habitsData.habits.find(function(h) { return h.id === id; });
+            if (!habit) return;
+            if (!habit.completed) habit.completed = {};
+            habit.completed[date] = chk;
+            localStorage.setItem('habitsData', JSON.stringify(habitsData));
+            if (firebaseReady && currentUser && db) { 
+                db.collection('users').doc(currentUser.uid).collection('habits').doc('data').set(habitsData); 
+            }
+            renderTodayHabits();
+        };
+        
+        function renderTodayTasks() {
+            const c = document.getElementById('todayTasksList');
+            const today = new Date().toISOString().split('T')[0];
+            const tasks = allTasks[today] ? allTasks[today].tasks : [];
+            if (tasks.length === 0) {
+                c.innerHTML = '<div class="empty-state"><p>No tasks for today. Click + to add one!</p></div>';
+                return;
+            }
+            c.innerHTML = '';
+            tasks.forEach(function(t, idx) {
+                const tm = formatTimeRange(t.startTime, t.endTime);
+                const cat = getCategoryClass(t.category || 'work');
+                const tmHtml = tm ? '<div class="task-time-range">⏰ ' + tm + '</div>' : '';
+                const d = document.createElement('div');
+                d.className = 'task-item ' + cat;
+                d.innerHTML = '<input type="checkbox" class="task-checkbox" ' + (t.completed ? 'checked' : '') + ' onchange="toggleTaskComplete(\'' + today + '\',' + idx + ',this.checked)"><div class="task-content">' + tmHtml + '<div class="task-text ' + (t.completed ? 'completed' : '') + '">' + escapeHtml(t.text) + '</div><div class="task-category">' + getCategoryIcon(t.category) + ' ' + (t.category || 'work') + '</div></div><button class="delete-task-btn" onclick="deleteTaskQuick(\'' + today + '\',' + idx + ',event)">✖</button>';
+                c.appendChild(d);
+            });
+        }
+        
+        window.toggleTaskComplete = function(dk, idx, chk) {
+            if (!allTasks[dk] || !allTasks[dk].tasks || !allTasks[dk].tasks[idx]) return;
+            allTasks[dk].tasks[idx].completed = chk;
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            if (firebaseReady && currentUser && db) { 
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(dk).set({ tasks: allTasks[dk].tasks }); 
+            }
+            renderTodayTasks();
+        };
+        
+        window.deleteTaskQuick = function(dk, idx, ev) {
+            ev.stopPropagation();
+            if (!allTasks[dk] || !allTasks[dk].tasks || !allTasks[dk].tasks[idx]) return;
+            allTasks[dk].tasks.splice(idx, 1);
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            if (firebaseReady && currentUser && db) {
+                const ref = db.collection('users').doc(currentUser.uid).collection('tasks').doc(dk);
+                if (allTasks[dk].tasks.length === 0) { ref.delete(); } else { ref.set({ tasks: allTasks[dk].tasks }); }
+            }
+            renderTodayTasks();
+        };
+        
+        function renderMiniCalendar() {
+            const first = new Date(miniCurrentYear, miniCurrentMonth, 1);
+            const start = first.getDay();
+            const days = new Date(miniCurrentYear, miniCurrentMonth + 1, 0).getDate();
+            document.getElementById('miniMonthYear').textContent = first.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            const g = document.getElementById('miniCalendarGrid');
+            g.innerHTML = '';
+            ['S','M','T','W','T','F','S'].forEach(function(d) {
+                const h = document.createElement('div');
+                h.textContent = d;
+                h.style.fontWeight = 'bold';
+                h.style.fontSize = '0.75em';
+                h.style.color = 'var(--color-text-light)';
+                g.appendChild(h);
+            });
+            for (let i = 0; i < start; i++) {
+                const e = document.createElement('div');
+                e.className = 'mini-calendar-day empty';
+                g.appendChild(e);
+            }
+            for (let d = 1; d <= days; d++) {
+                const ds = miniCurrentYear + '-' + String(miniCurrentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                const day = document.createElement('div');
+                day.className = 'mini-calendar-day';
+                if (ds === selectedDate) day.classList.add('selected');
+                day.textContent = d;
+                day.onclick = function() { selectedDate = ds; renderMiniCalendar(); renderTodayTasks(); };
+                g.appendChild(day);
+            }
+        }
+        window.prevMiniMonth = function() { miniCurrentMonth--; if (miniCurrentMonth < 0) { miniCurrentMonth = 11; miniCurrentYear--; } renderMiniCalendar(); };
+        window.nextMiniMonth = function() { miniCurrentMonth++; if (miniCurrentMonth > 11) { miniCurrentMonth = 0; miniCurrentYear++; } renderMiniCalendar(); };
+        window.goToTodayMini = function() { const t = new Date(); miniCurrentMonth = t.getMonth(); miniCurrentYear = t.getFullYear(); selectedDate = t.toISOString().split('T')[0]; renderMiniCalendar(); renderTodayTasks(); };
+        
+        function renderHobbyDisplay() {
+            const lastHobby = localStorage.getItem('lastHobby');
+            const display = document.getElementById('hobbyDisplay');
+            if (lastHobby) {
+                const hobby = JSON.parse(lastHobby);
+                display.innerHTML = '<div class="hobby-result"><span class="hobby-result-icon">' + hobby.icon + '</span>' + hobby.name + '</div>';
+            } else {
+                display.innerHTML = '<div class="hobby-placeholder">Click "Spin" to find your next hobby!</div>';
+            }
+        }
+        window.spinHobby = function() {
+            if (!hobbyList || hobbyList.length === 0) { return; }
+            const display = document.getElementById('hobbyDisplay');
+            display.classList.add('animating');
+            let count = 0;
+            const interval = setInterval(function() {
+                const randomHobby = hobbyList[Math.floor(Math.random() * hobbyList.length)];
+                display.innerHTML = '<div class="hobby-result"><span class="hobby-result-icon">' + randomHobby.icon + '</span>' + randomHobby.name + '</div>';
+                count++;
+                if (count >= 20) {
+                    clearInterval(interval);
+                    display.classList.remove('animating');
+                    const finalHobby = hobbyList[Math.floor(Math.random() * hobbyList.length)];
+                    display.innerHTML = '<div class="hobby-result"><span class="hobby-result-icon">' + finalHobby.icon + '</span>' + finalHobby.name + '</div>';
+                    localStorage.setItem('lastHobby', JSON.stringify(finalHobby));
+                }
+            }, 100);
+        };
+        window.openHobbySettings = function() { renderHobbyListEdit(); document.getElementById('hobbyModal').classList.add('active'); };
+        window.closeHobbyModal = function() { document.getElementById('hobbyModal').classList.remove('active'); };
+        function renderHobbyListEdit() {
+            const container = document.getElementById('hobbyListEdit');
+            container.innerHTML = '';
+            hobbyList.forEach(function(hobby, idx) {
+                const div = document.createElement('div');
+                div.className = 'hobby-edit-item';
+                div.innerHTML = '<input type="text" value="' + hobby.icon + '" style="max-width:50px;text-align:center;" onchange="updateHobby(' + idx + ', \'icon\', this.value)"><input type="text" value="' + hobby.name + '" onchange="updateHobby(' + idx + ', \'name\', this.value)"><button onclick="removeHobby(' + idx + ')">✖</button>';
+                container.appendChild(div);
+            });
+        }
+        window.addHobbyToList = function() {
+            const name = document.getElementById('newHobbyInput').value.trim();
+            const icon = document.getElementById('newHobbyIcon').value.trim() || '🎨';
+            if (!name) { return; }
+            hobbyList.push({ name: name, icon: icon });
+            localStorage.setItem('hobbyList', JSON.stringify(hobbyList));
+            document.getElementById('newHobbyInput').value = '';
+            document.getElementById('newHobbyIcon').value = '';
+            renderHobbyListEdit();
+        };
+        window.updateHobby = function(idx, field, value) { if (!hobbyList[idx]) return; hobbyList[idx][field] = value; };
+        window.removeHobby = function(idx) { hobbyList.splice(idx, 1); localStorage.setItem('hobbyList', JSON.stringify(hobbyList)); renderHobbyListEdit(); };
+        window.saveHobbySettings = function() { localStorage.setItem('hobbyList', JSON.stringify(hobbyList)); closeHobbyModal(); renderHobbyDisplay(); };
+        
+        function renderMotivationImages() {
+            const grid = document.getElementById('motivationGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const card = document.createElement('div');
+                card.className = 'motivation-img-card';
+                if (motivationImages[i] && motivationImages[i].data) {
+                    card.innerHTML = '<img src="' + motivationImages[i].data + '"><button class="motivation-img-delete" onclick="removeMotivationImage(' + i + ')">✖</button>';
+                } else {
+                    card.innerHTML = '<button class="motivation-add-btn" onclick="openMotivationSettings()">➕</button><div class="motivation-img-placeholder"><span>Add Photo</span></div>';
+                }
+                grid.appendChild(card);
+            }
+        }
+        window.openMotivationSettings = function() { renderMotivationListEdit(); document.getElementById('motivationModal').classList.add('active'); };
+        window.closeMotivationModal = function() { document.getElementById('motivationModal').classList.remove('active'); };
+        function renderMotivationListEdit() {
+            const container = document.getElementById('motivationListEdit');
+            container.innerHTML = '';
+            if (!motivationImages || motivationImages.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:var(--color-text-light);">No photos yet</p>';
+                return;
+            }
+            motivationImages.forEach(function(img, idx) {
+                const div = document.createElement('div');
+                div.className = 'hobby-edit-item';
+                div.innerHTML = '<img src="' + img.data + '" style="width:40px;height:40px;border-radius:8px;object-fit:cover;"><span style="flex:1;font-size:0.85em;">Photo ' + (idx + 1) + '</span><button onclick="removeMotivationImageFromList(' + idx + ')">✖</button>';
+                container.appendChild(div);
+            });
+        }
+        window.handleMotivationFile = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (motivationImages.length >= 4) { input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                motivationImages.push({ data: e.target.result });
+                renderMotivationListEdit();
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
+        };
+        window.removeMotivationImageFromList = function(idx) { motivationImages.splice(idx, 1); renderMotivationListEdit(); };
+        window.removeMotivationImage = function(idx) { motivationImages.splice(idx, 1); localStorage.setItem('motivationImages', JSON.stringify(motivationImages)); renderMotivationImages(); };
+        
+        // ✅ СОХРАНЕНИЕ MOOD BOARD В FIREBASE
+        window.saveMotivationSettings = function() { 
+            localStorage.setItem('motivationImages', JSON.stringify(motivationImages)); 
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('settings').doc('motivation').set({ images: motivationImages });
+            }
+            closeMotivationModal(); 
+            renderMotivationImages(); 
+        };
+        
+        function renderQuote() {
+            const display = document.getElementById('quoteDisplay');
+            if (!display) return;
+            if (quoteOfTheDay && quoteOfTheDay.text) {
+                display.innerHTML = '<div class="quote-text">"' + escapeHtml(quoteOfTheDay.text) + '"</div>' + (quoteOfTheDay.author ? '<div class="quote-author">— ' + escapeHtml(quoteOfTheDay.author) + '</div>' : '');
+            } else {
+                display.innerHTML = '<div class="quote-placeholder">Click "+" to add your favorite quote!</div>';
+            }
+        }
+        window.openQuoteModal = function() {
+            document.getElementById('quoteText').value = quoteOfTheDay ? quoteOfTheDay.text || '' : '';
+            document.getElementById('quoteAuthor').value = quoteOfTheDay ? quoteOfTheDay.author || '' : '';
+            document.getElementById('quoteModal').classList.add('active');
+        };
+        window.closeQuoteModal = function() { document.getElementById('quoteModal').classList.remove('active'); };
+        
+        // ✅ СОХРАНЕНИЕ ЦИТАТЫ В FIREBASE
+        window.saveQuote = function() {
+            const text = document.getElementById('quoteText').value.trim();
+            const author = document.getElementById('quoteAuthor').value.trim();
+            if (!text) { return; }
+            quoteOfTheDay = { text: text, author: author };
+            localStorage.setItem('quoteOfTheDay', JSON.stringify(quoteOfTheDay));
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('settings').doc('quote').set(quoteOfTheDay);
+            }
+            closeQuoteModal();
+            renderQuote();
+        };
+        
+        window.openAddTaskModal = function() {
+            document.getElementById('newTaskTitle').value = '';
+            document.getElementById('newTaskDate').value = selectedDate;
+            document.getElementById('newTaskTime').value = '';
+            document.getElementById('newTaskCategory').value = 'work';
+            document.getElementById('newTaskNotes').value = '';
+            document.getElementById('taskModalTitle').textContent = '➕ New Task';
+            document.getElementById('taskModal').classList.add('active');
+        };
+        
+        window.closeTaskModal = function() {
+            document.getElementById('taskModal').classList.remove('active');
+        };
+        
+        window.saveNewTask = function() {
+            const title = document.getElementById('newTaskTitle').value.trim();
+            const date = document.getElementById('newTaskDate').value;
+            const time = document.getElementById('newTaskTime').value;
+            const category = document.getElementById('newTaskCategory').value;
+            const notes = document.getElementById('newTaskNotes').value.trim();
+            
+            if (!title) { return; }
+            if (!date) { return; }
+            
+            if (!allTasks[date]) allTasks[date] = { tasks: [] };
+            
+            allTasks[date].tasks.push({
+                id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                text: title,
+                startTime: time || null,
+                endTime: null,
+                category: category,
+                completed: false,
+                notes: notes
+            });
+            
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(date).set({ tasks: allTasks[date].tasks });
+            }
+            
+            closeTaskModal();
+            renderTodayTasks();
+        };
+        
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            firebase.auth().signOut().then(function() {
+                window.location.href = 'auth.html';
+            });
+        });
+    </script>
+</body>
+</html>

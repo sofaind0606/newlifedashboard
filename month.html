@@ -1,0 +1,795 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDashboard | Month Calendar</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --color-primary: #e38792;
+            --color-primary-dark: #BA494B;
+            --color-primary-light: #f7c4cb;
+            --color-secondary: #9dad71;
+            --color-secondary-dark: #7e8c5a;
+            --color-secondary-light: #d1ddb5;
+            --color-bg: #f2eee8;
+            --color-bg-alt: #ffffff;
+            --color-nav: #BA494B;
+            --color-text: #BA494B;
+            --color-text-light: #9a5a5c;
+            --color-text-muted: #c49a9b;
+            --color-border: #9dad71;
+            --color-border-light: #d1ddb5;
+            --color-success: #6bcb77;
+            --color-success-light: #d4edda;
+            --color-danger: #ff6b6b;
+            --color-danger-light: #f8d7da;
+            --shadow-sm: 0 2px 8px rgba(186, 73, 75, 0.05);
+            --shadow-md: 0 4px 15px rgba(186, 73, 75, 0.08);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.2s ease;
+        }
+
+        .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+            .month-nav button {
+                background: var(--color-primary);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: var(--radius-md);
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.9em;
+            }
+
+                .month-nav button:hover {
+                    background: var(--color-primary-dark);
+                    transform: translateY(-1px);
+                }
+
+        #currentMonthYear {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--color-text);
+        }
+
+        .month-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .month-day {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            min-height: 120px;
+            cursor: pointer;
+            border: 2px solid var(--color-border);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+            .month-day:hover {
+                transform: scale(1.02);
+                box-shadow: var(--shadow-md);
+                border-color: var(--color-primary);
+            }
+
+            .month-day.today {
+                border: 3px solid var(--color-primary);
+            }
+
+            .month-day.has-important {
+                border: 3px solid #FFD700 !important;
+                box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+                background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%) !important;
+            }
+
+        .month-day-num {
+            font-weight: bold;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .month-day-tasks {
+            font-size: 0.75em;
+            color: var(--color-text);
+        }
+
+            .month-day-tasks div {
+                padding: 2px 0;
+                border-bottom: 1px dashed var(--color-border-light);
+            }
+
+        .important-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 1.3em;
+        }
+
+        .card h2 {
+            color: var(--color-text);
+            border-bottom: 2px solid var(--color-border);
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state {
+            color: var(--color-text-light);
+            background: var(--color-primary-light);
+            border: 2px dashed var(--color-border);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+
+        /* ========== MODALS ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(186, 73, 75, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 2px solid var(--color-border);
+            box-shadow: var(--shadow-md);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--color-border);
+        }
+            .modal-header h3 {
+                color: var(--color-primary);
+                font-weight: 700;
+                margin: 0;
+            }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            color: var(--color-primary);
+            padding: 0;
+            width: auto;
+            height: auto;
+        }
+            .close-modal:hover {
+                background: none;
+                transform: none;
+                color: var(--color-primary-dark);
+            }
+        .form-group { margin-bottom: 16px; }
+            .form-group label {
+                display: block;
+                margin-bottom: 6px;
+                font-weight: 600;
+                color: var(--color-primary);
+            }
+            .form-group input, .form-group select, .form-group textarea {
+                width: 100%;
+                padding: 10px 14px;
+                background: var(--color-bg);
+                border: 2px solid var(--color-border);
+                border-radius: var(--radius-md);
+                font-size: 0.95rem;
+                transition: var(--transition);
+                box-sizing: border-box;
+            }
+                .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+                    outline: none;
+                    border-color: var(--color-primary);
+                    box-shadow: 0 0 0 3px rgba(227, 135, 146, 0.2);
+                }
+        .time-row { display: flex; gap: 8px; align-items: center; }
+            .time-row input { flex: 1; }
+            .time-separator { font-weight: bold; color: var(--color-primary); font-size: 1.2em; padding: 0 4px; }
+        
+        /* Task Item in Day Modal */
+        .day-task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            transition: var(--transition);
+            border: none;
+        }
+        .day-task-item:hover {
+            box-shadow: var(--shadow-sm);
+            transform: translateX(4px);
+        }
+        .day-task-item.status-not-started {
+            background: linear-gradient(135deg, var(--color-secondary-light) 0%, var(--color-bg-alt) 100%);
+            border: 2px solid var(--color-secondary);
+        }
+        .day-task-item.status-in-progress {
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-alt) 100%);
+            border: 2px solid var(--color-primary);
+        }
+        .day-task-item.status-completed {
+            background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-bg-alt) 100%);
+            border: 2px solid var(--color-success);
+            opacity: 0.8;
+        }
+        .day-task-item.status-completed .task-title {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        .day-task-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+        }
+        .day-task-content { flex: 1; }
+        .day-task-title {
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+        .day-task-meta {
+            font-size: 0.8em;
+            color: var(--color-text-light);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .task-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .badge-difficulty { background: var(--color-warning); color: #000; }
+        .badge-deadline { background: var(--color-danger); color: white; }
+        .badge-important { background: #FFD700; color: #000; }
+        .day-task-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .day-task-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: var(--transition);
+        }
+        .day-task-btn.edit {
+            background: var(--color-secondary-light);
+            color: var(--color-text);
+        }
+        .day-task-btn.delete {
+            background: var(--color-danger);
+            color: white;
+        }
+        .day-task-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1em;
+        }
+        .save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        
+        .add-task-section {
+            background: var(--color-bg);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            border: 2px solid var(--color-border);
+        }
+        .add-task-section h4 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .month-calendar-grid { gap: 4px; }
+            .month-day { min-height: 80px; padding: 6px; }
+            .month-day-num { font-size: 0.9em; }
+            .month-day-tasks { font-size: 0.65em; }
+            .modal-content { max-width: 95%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="nav-frame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
+            <div class="nav-section"><div class="nav-title">MAIN</div><a href="index.html" class="nav-item">🏠 Home</a><a href="day.html" class="nav-item">📆 Day Planner</a></div>
+            <div class="nav-section"><div class="nav-title">PLANNING</div><a href="week.html" class="nav-item">📋 Week Planner</a><a href="month.html" class="nav-item active">🗓️ Month Calendar</a><a href="year.html" class="nav-item">🎯 Year Goals</a></div>
+            <div class="nav-section"><div class="nav-title">TRACKERS</div><a href="habits.html" class="nav-item">🔥 Habit Tracker</a><a href="finance.html" class="nav-item">💰 Finance Tracker</a><a href="media.html" class="nav-item">📚🎬 Books & Movies</a><a href="study.html" class="nav-item">📚 Study Tasks</a><a href="pomodoro.html" class="nav-item">🍅 Pomodoro Timer</a></div>
+        </nav>
+
+        <div class="content-area">
+            <div class="card">
+                <h2>🗓️ Month Calendar</h2>
+
+                <div class="month-nav">
+                    <button onclick="prevMonth()">◀ Previous Month</button>
+                    <span id="currentMonthYear"></span>
+                    <button onclick="nextMonth()">Next Month ▶</button>
+                    <button onclick="goToCurrentMonth()" style="background: var(--color-secondary);">📅 Today</button>
+                </div>
+                <div class="month-calendar-grid" id="monthCalendarGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ DAY TASK VIEW MODAL -->
+    <div id="dayTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dayTaskModalTitle">📅 Tasks for Day</h3>
+                <button class="close-modal" onclick="closeDayTaskModal()">✖</button>
+            </div>
+            
+            <!-- Add New Task Form -->
+            <div class="add-task-section">
+                <h4>➕ Add New Task</h4>
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" id="newTaskTitle" placeholder="What needs to be done?">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Time Range (optional)</label>
+                        <div class="time-row">
+                            <input type="time" id="newTaskStartTime">
+                            <span class="time-separator">—</span>
+                            <input type="time" id="newTaskEndTime">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="newTaskCategory">
+                            <option value="work">💼 Work</option>
+                            <option value="study">📚 Study</option>
+                            <option value="hobby">🎨 Hobby</option>
+                            <option value="rest">😌 Rest</option>
+                            <option value="family">👨‍👩‍👧 Family</option>
+                            <option value="sport">⚽ Sport</option>
+                            <option value="selfdev">🌱 Self-Development</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Difficulty</label>
+                        <select id="newTaskDifficulty">
+                            <option value="easy">🟢 Easy</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="hard">🔴 Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="newTaskStatus">
+                            <option value="not-started">⚪ Not Started</option>
+                            <option value="in-progress">🔵 In Progress</option>
+                            <option value="completed">✅ Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="newTaskImportant" style="width:18px;height:18px;">
+                        <span style="color:var(--color-text);font-weight:500;">⚠️ Mark as Important</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="newTaskNotes" rows="2" placeholder="Additional details..."></textarea>
+                </div>
+                <button class="save-btn" onclick="addNewTaskFromDayModal()">💾 Add Task</button>
+            </div>
+            
+            <!-- Existing Tasks List -->
+            <h4 style="margin:0 0 12px 0;color:var(--color-primary);">📋 Existing Tasks</h4>
+            <div id="dayTaskListContent"></div>
+            
+            <div style="margin-top:20px;text-align:center;">
+                <button onclick="closeDayTaskModal()" style="width:100%;padding:12px;background:var(--color-bg);border:2px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;font-weight:600;color:var(--color-text);">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let allTasks = JSON.parse(localStorage.getItem('allTasks')) || {};
+        let firebaseReady = false;
+        let db = null;
+        let currentUser = null;
+        let selectedDateForModal = null;
+        
+        const firebaseConfig = { 
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I", 
+            authDomain: "lifedashbord.firebaseapp.com", 
+            projectId: "lifedashbord", 
+            storageBucket: "lifedashbord.appspot.com", 
+            messagingSenderId: "206574362724", 
+            appId: "1:206574362724:web:83887cae4dc87b41137f71" 
+        };
+
+        const statusLabels = {
+            'not-started': '⚪ Not Started',
+            'in-progress': '🔵 In Progress',
+            'completed': '✅ Completed'
+        };
+        
+        const difficultyLabels = {
+            'easy': '🟢 Easy',
+            'medium': '🟡 Medium',
+            'hard': '🔴 Hard'
+        };
+        
+        const categoryNames = {
+            work: '💼 Work',
+            study: '📚 Study',
+            hobby: '🎨 Hobby',
+            rest: '😌 Rest',
+            family: '👨‍👩‍👧 Family',
+            sport: '⚽ Sport',
+            selfdev: '🌱 Self Development'
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ✅ Initialize Firebase (non-blocking)
+            initFirebase();
+            // ✅ Render immediately from localStorage (no wait for Firebase)
+            renderMonthCalendar();
+        });
+
+        function initFirebase() {
+            var firebaseTimeout = setTimeout(function () { firebaseReady = false; }, 5000);
+            try {
+                if (typeof firebase === 'undefined') { clearTimeout(firebaseTimeout); return; }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                var auth = firebase.auth();
+                auth.onAuthStateChanged(function (user) {
+                    clearTimeout(firebaseTimeout);
+                    if (user) { 
+                        currentUser = user; 
+                        firebaseReady = true;
+                        // ✅ Load from Firebase in background (non-blocking)
+                        loadTasksData();
+                    }
+                    else { firebaseReady = false; }
+                });
+            } catch (e) { clearTimeout(firebaseTimeout); firebaseReady = false; }
+        }
+        
+        // ✅ Fixed: using .then() without await to avoid syntax errors
+        function loadTasksData() {
+            if (!currentUser || !db) return;
+            db.collection('users').doc(currentUser.uid).collection('tasks').get().then(function(snapshot) {
+                const loaded = {};
+                snapshot.forEach(function(doc) { loaded[doc.id] = doc.data(); });
+                // Only update if data differs
+                if (JSON.stringify(allTasks) !== JSON.stringify(loaded)) {
+                    allTasks = loaded;
+                    localStorage.setItem('allTasks', JSON.stringify(allTasks));
+                    renderMonthCalendar();
+                }
+            });
+        }
+        
+        function saveTasksData() {
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) {
+                // Save each date separately
+                Object.keys(allTasks).forEach(function(dateKey) {
+                    db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateKey)
+                        .set(allTasks[dateKey]);
+                });
+            }
+        }
+
+        function getDateKey(date) { return date.toISOString().split('T')[0]; }
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function (m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]); }); }
+        function getCategoryIcon(cat) { var i = { work: '💼', study: '📚', hobby: '🎨', rest: '😌', family: '👨‍👩‍👧', sport: '⚽', selfdev: '🌱' }; return i[cat] || '📌'; }
+        function getCategoryClass(cat) { var c = { work: 'category-work', study: 'category-study', hobby: 'category-hobby', rest: 'category-rest', family: 'category-family', sport: 'category-sport', selfdev: 'category-selfdev' }; return c[cat] || 'category-work'; }
+        function formatTimeRange(start, end) { if (!start && !end) return ''; if (start && !end) return start; if (!start && end) return '— ' + end; return start + ' — ' + end; }
+        function generateTaskId() { return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function renderMonthCalendar() {
+            var firstDay = new Date(currentYear, currentMonth, 1);
+            var startDay = firstDay.getDay();
+            var daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            document.getElementById('currentMonthYear').textContent = firstDay.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+            var grid = document.getElementById('monthCalendarGrid');
+            grid.innerHTML = '';
+
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function (d) {
+                var h = document.createElement('div');
+                h.textContent = d;
+                h.style.fontWeight = 'bold';
+                h.style.color = 'var(--color-text-light)';
+                h.style.fontSize = '0.8em';
+                h.style.textAlign = 'center';
+                h.style.padding = '8px';
+                grid.appendChild(h);
+            });
+
+            for (var i = 0; i < startDay; i++) {
+                var e = document.createElement('div');
+                e.className = 'month-day';
+                e.style.opacity = '0.3';
+                grid.appendChild(e);
+            }
+
+            var today = new Date();
+
+            for (var d = 1; d <= daysInMonth; d++) {
+                var dateStr = currentYear + '-' + String(currentMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                var tasks = allTasks[dateStr]?.tasks || [];
+                if (!tasks) tasks = [];
+
+                var importantTasks = tasks.filter(function (t) { return t.important && !t.completed; });
+                var hasImportant = importantTasks.length > 0;
+
+                // Show first 3 important tasks on calendar
+                var tasksList = importantTasks.slice(0, 3).map(function (t) {
+                    var tr = formatTimeRange(t.startTime, t.endTime);
+                    var icon = getCategoryIcon(t.category);
+                    return '<div>' + icon + ' ' + (tr ? tr + ' ' : '') + escapeHtml(t.text) + '</div>';
+                });
+
+                var isToday = today.getFullYear() === currentYear && today.getMonth() === currentMonth && today.getDate() === d;
+
+                var dayDiv = document.createElement('div');
+                dayDiv.className = 'month-day';
+                if (isToday) dayDiv.classList.add('today');
+                if (hasImportant) dayDiv.classList.add('has-important');
+
+                var importantIcon = hasImportant ? '<div class="important-icon" title="' + importantTasks.length + ' important task(s)">🔥</div>' : '';
+                var tasksHtml = tasksList.length > 0 ? '<div class="month-day-tasks">' + tasksList.join('') + '</div>' : '<div class="month-day-tasks" style="color:var(--color-text-muted);font-style:italic;">' + tasks.length + ' task(s)</div>';
+
+                dayDiv.innerHTML = importantIcon + '<div class="month-day-num">' + d + '</div>' + tasksHtml;
+
+                // ✅ CLICK TO OPEN DAY TASK MODAL
+                dayDiv.onclick = (function (date, tasks) {
+                    return function () {
+                        openDayTaskModal(date, tasks);
+                    };
+                })(dateStr, tasks);
+
+                grid.appendChild(dayDiv);
+            }
+        }
+
+        // ✅ OPEN DAY TASK MODAL WITH ALL TASKS
+        function openDayTaskModal(dateStr, tasks) {
+            selectedDateForModal = dateStr;
+            document.getElementById('dayTaskModalTitle').textContent = '📅 Tasks for ' + dateStr;
+            
+            // Clear form
+            document.getElementById('newTaskTitle').value = '';
+            document.getElementById('newTaskStartTime').value = '';
+            document.getElementById('newTaskEndTime').value = '';
+            document.getElementById('newTaskCategory').value = 'work';
+            document.getElementById('newTaskDifficulty').value = 'medium';
+            document.getElementById('newTaskStatus').value = 'not-started';
+            document.getElementById('newTaskImportant').checked = false;
+            document.getElementById('newTaskNotes').value = '';
+            
+            renderDayTaskList(dateStr, tasks);
+            document.getElementById('dayTaskModal').classList.add('active');
+        }
+
+        function closeDayTaskModal() { 
+            document.getElementById('dayTaskModal').classList.remove('active'); 
+            selectedDateForModal = null;
+        }
+
+        // ✅ RENDER ALL TASKS FOR THE DAY (IMPORTANT + NOT IMPORTANT)
+        function renderDayTaskList(dateStr, tasks) {
+            const container = document.getElementById('dayTaskListContent');
+            
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding:20px;">No tasks for this day. Add one above!</div>';
+                return;
+            }
+
+            // Sort: important first, then by status, then by time
+            tasks.sort(function(a, b) {
+                if (a.important && !b.important) return -1;
+                if (!a.important && b.important) return 1;
+                if (a.status === 'completed' && b.status !== 'completed') return 1;
+                if (a.status !== 'completed' && b.status === 'completed') return -1;
+                return (a.startTime || '00:00').localeCompare(b.startTime || '00:00');
+            });
+
+            let html = '';
+            tasks.forEach(function(t, idx) {
+                const timeRange = formatTimeRange(t.startTime, t.endTime);
+                const importantBadge = t.important ? '<span class="task-badge badge-important">🔥 Important</span>' : '';
+                const timeHtml = timeRange ? '<span style="color:var(--color-primary);font-weight:600;font-size:0.8em;">⏰ ' + timeRange + '</span>' : '';
+                const categoryHtml = '<span class="task-badge" style="background:var(--color-primary);color:white;">' + categoryNames[t.category] + '</span>';
+                const difficultyHtml = t.difficulty ? '<span class="task-badge badge-difficulty">' + difficultyLabels[t.difficulty] + '</span>' : '';
+                const statusHtml = t.status ? '<span class="task-badge badge-status" style="background:var(--color-info);color:white;">' + statusLabels[t.status] + '</span>' : '';
+                
+                html += '<div class="day-task-item status-' + (t.status || 'not-started') + '">';
+                html += '<input type="checkbox" class="day-task-checkbox" ' + (t.status === 'completed' ? 'checked' : '') + ' onchange="toggleTaskInDayModal(\'' + dateStr + '\',' + idx + ',this.checked)">';
+                html += '<div class="day-task-content">';
+                html += '<div class="day-task-title">' + escapeHtml(t.text) + '</div>';
+                html += '<div class="day-task-meta">';
+                html += timeHtml;
+                html += categoryHtml;
+                html += difficultyHtml;
+                html += statusHtml;
+                html += importantBadge;
+                if (t.notes) html += '<span>📝 ' + escapeHtml(t.notes).substring(0, 30) + (t.notes.length > 30 ? '...' : '') + '</span>';
+                html += '</div>';
+                html += '</div>';
+                html += '<div class="day-task-actions">';
+                html += '<button class="day-task-btn edit" onclick="editTaskInDayModal(\'' + dateStr + '\',' + idx + ')">✏️</button>';
+                html += '<button class="day-task-btn delete" onclick="deleteTaskInDayModal(\'' + dateStr + '\',' + idx + ')">🗑️</button>';
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        // ✅ ADD NEW TASK FROM DAY MODAL
+        window.addNewTaskFromDayModal = function() {
+            const title = document.getElementById('newTaskTitle').value.trim();
+            const startTime = document.getElementById('newTaskStartTime').value;
+            const endTime = document.getElementById('newTaskEndTime').value;
+            const category = document.getElementById('newTaskCategory').value;
+            const difficulty = document.getElementById('newTaskDifficulty').value;
+            const status = document.getElementById('newTaskStatus').value;
+            const important = document.getElementById('newTaskImportant').checked;
+            const notes = document.getElementById('newTaskNotes').value.trim();
+            
+            if (!title) { return; }
+            if (!selectedDateForModal) { return; }
+            
+            if (!allTasks[selectedDateForModal]) allTasks[selectedDateForModal] = { tasks: [] };
+            
+            allTasks[selectedDateForModal].tasks.push({
+                id: generateTaskId(),
+                text: title,
+                startTime: startTime || null,
+                endTime: endTime || null,
+                category: category,
+                difficulty: difficulty,
+                status: status,
+                important: important,
+                completed: status === 'completed',
+                notes: notes
+            });
+            
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(selectedDateForModal)
+                    .set({ tasks: allTasks[selectedDateForModal].tasks });
+            }
+            
+            // Re-render modal list and calendar
+            const tasks = allTasks[selectedDateForModal].tasks;
+            renderDayTaskList(selectedDateForModal, tasks);
+            renderMonthCalendar();
+            
+            // Clear form
+            document.getElementById('newTaskTitle').value = '';
+            document.getElementById('newTaskStartTime').value = '';
+            document.getElementById('newTaskEndTime').value = '';
+            document.getElementById('newTaskImportant').checked = false;
+            document.getElementById('newTaskNotes').value = '';
+        };
+
+        // ✅ TOGGLE TASK COMPLETE IN DAY MODAL
+        window.toggleTaskInDayModal = function(dateStr, idx, completed) {
+            if (!allTasks[dateStr]?.tasks?.[idx]) return;
+            allTasks[dateStr].tasks[idx].status = completed ? 'completed' : 'in-progress';
+            allTasks[dateStr].tasks[idx].completed = completed;
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateStr)
+                    .set({ tasks: allTasks[dateStr].tasks });
+            }
+            renderDayTaskList(dateStr, allTasks[dateStr].tasks);
+            renderMonthCalendar();
+        };
+
+        // ✅ DELETE TASK IN DAY MODAL
+        window.deleteTaskInDayModal = function(dateStr, idx) {
+            if (!allTasks[dateStr]?.tasks?.[idx]) return;
+            allTasks[dateStr].tasks.splice(idx, 1);
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) {
+                const ref = db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateStr);
+                if (allTasks[dateStr].tasks.length === 0) { ref.delete(); }
+                else { ref.set({ tasks: allTasks[dateStr].tasks }); }
+            }
+            renderDayTaskList(dateStr, allTasks[dateStr].tasks);
+            renderMonthCalendar();
+        };
+
+        // ✅ EDIT TASK IN DAY MODAL
+        window.editTaskInDayModal = function(dateStr, idx) {
+            const task = allTasks[dateStr]?.tasks?.[idx];
+            if (!task) return;
+            
+            // Populate form with task data
+            document.getElementById('newTaskTitle').value = task.text || '';
+            document.getElementById('newTaskStartTime').value = task.startTime || '';
+            document.getElementById('newTaskEndTime').value = task.endTime || '';
+            document.getElementById('newTaskCategory').value = task.category || 'work';
+            document.getElementById('newTaskDifficulty').value = task.difficulty || 'medium';
+            document.getElementById('newTaskStatus').value = task.status || 'not-started';
+            document.getElementById('newTaskImportant').checked = task.important || false;
+            document.getElementById('newTaskNotes').value = task.notes || '';
+            
+            // Delete old task (will be replaced when saved)
+            allTasks[dateStr].tasks.splice(idx, 1);
+        };
+
+        function prevMonth() { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderMonthCalendar(); }
+        function nextMonth() { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderMonthCalendar(); }
+        function goToCurrentMonth() { var today = new Date(); currentMonth = today.getMonth(); currentYear = today.getFullYear(); renderMonthCalendar(); }
+    </script>
+</body>
+</html>

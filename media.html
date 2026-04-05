@@ -1,0 +1,1914 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDashboard | Books & Movies</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --color-primary: #E59B90;
+            --color-primary-dark: #c97b6f;
+            --color-primary-light: #f7c7bf;
+            --color-secondary: #A4A884;
+            --color-secondary-dark: #8a8e6c;
+            --color-secondary-light: #d0d4b6;
+            --color-accent: #620607;
+            --color-text: #620607;
+            --color-text-light: #8a3a3c;
+            --color-text-muted: #b57a7c;
+            --color-nav: #E59B90;
+            --color-border: #A4A884;
+            --color-border-light: #d0d4b6;
+            --color-bg: #F9FBED;
+            --color-bg-alt: #ffffff;
+            --color-success: #6bcb77;
+            --color-warning: #ffd93d;
+            --color-danger: #ff6b6b;
+            --shadow-sm: 0 2px 8px rgba(98, 6, 7, 0.05);
+            --shadow-md: 0 4px 15px rgba(98, 6, 7, 0.08);
+            --shadow-lg: 0 10px 30px rgba(98, 6, 7, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--color-bg); min-height: 100vh; color: var(--color-text); }
+        
+        .app-layout { display: flex; min-height: 100vh; }
+        .nav-frame {
+            width: 18%;
+            min-width: 200px;
+            background: #E59B90;
+            padding: 24px 16px;
+            border-right: 2px solid var(--color-primary);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 4px 0 20px rgba(198, 61, 77, 0.15);
+        }
+        .logo { margin-bottom: 16px; padding: 12px; border-bottom: 2px solid #ffffff; text-align: center; background: rgba(255, 255, 255, 0.1); border-radius: 12px; }
+        .logo h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; margin: 0; }
+        .logo p { color: var(--color-bg); font-size: 0.75rem; margin-top: 2px; opacity: 0.9; }
+        .nav-section { margin-bottom: 20px; }
+        .nav-title { color: rgba(255,255,255,0.7); font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; padding-left: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: whitesmoke; text-decoration: none; border-radius: var(--radius-md); margin-bottom: 4px; transition: var(--transition); font-weight: 600; }
+        .nav-item:hover { background: var(--color-primary); color: #BA494B; transform: translateX(4px); }
+        .nav-item.active { background: #BA494B; color: whitesmoke; font-weight: 700; }
+        
+        .content-area { flex: 1; margin-left: 18%; padding: 24px 32px; }
+        
+        .media-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .media-header h1 {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            background: var(--color-bg-alt);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: var(--transition);
+        }
+        .tab-btn:hover {
+            background: var(--color-primary-light);
+            border-color: var(--color-primary);
+        }
+        .tab-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .status-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .status-filter-btn {
+            padding: 8px 16px;
+            background: var(--color-bg-alt);
+            border: 2px solid var(--color-border-light);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9em;
+            transition: var(--transition);
+            color: var(--color-text-light);
+        }
+        .status-filter-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-text);
+        }
+        .status-filter-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .add-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .section-header {
+            grid-column: 1 / -1;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-alt) 100%);
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--color-border-light);
+            margin-top: 20px;
+        }
+        .section-header:first-child {
+            margin-top: 0;
+        }
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-count {
+            background: var(--color-primary);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .media-card {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--color-border-light);
+            overflow: hidden;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .media-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-primary);
+        }
+        
+        .media-poster {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-secondary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: var(--color-text-muted);
+        }
+        .media-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .media-info {
+            padding: 16px;
+        }
+        .media-title {
+            font-weight: 700;
+            font-size: 1em;
+            color: var(--color-text);
+            margin-bottom: 8px;
+            display: -webkit-box;
+            display: -moz-box;
+            display: -ms-flexbox;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .media-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            color: var(--color-text-light);
+        }
+        .media-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .status-planned { background: rgba(229, 155, 144, 0.2); color: var(--color-primary); }
+        .status-watching { background: rgba(255, 217, 61, 0.2); color: #b89d00; }
+        .status-completed { background: rgba(107, 203, 119, 0.2); color: var(--color-success); }
+        
+        .media-rating .star {
+            color: var(--color-warning);
+            font-size: 1.1em;
+        }
+        .media-rating .star.empty {
+            color: var(--color-border-light);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(98, 6, 7, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal[style*="display: flex"] {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            border: 2px solid var(--color-border);
+            box-shadow: var(--shadow-lg);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--color-border);
+        }
+        .modal-header h3 {
+            color: var(--color-primary);
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.3em;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.6em;
+            cursor: pointer;
+            color: var(--color-primary);
+            padding: 0;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--color-primary);
+            font-size: 0.9em;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 0.95em;
+            transition: var(--transition);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(229, 155, 144, 0.2);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .poster-preview {
+            width: 100%;
+            max-width: 200px;
+            height: 300px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-secondary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 12px auto;
+            overflow: hidden;
+            border: 2px solid var(--color-border);
+        }
+        .poster-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .poster-preview .placeholder {
+            font-size: 3em;
+            color: var(--color-text-muted);
+        }
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            display: block;
+        }
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .file-input-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--color-bg);
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
+            text-align: center;
+            cursor: pointer;
+            color: var(--color-text-light);
+            transition: var(--transition);
+        }
+        .file-input-btn:hover {
+            border-color: var(--color-primary);
+            background: var(--color-primary-light);
+            color: var(--color-text);
+        }
+        .poster-hint {
+            text-align: center;
+            font-size: 0.8em;
+            color: var(--color-text-light);
+            margin-top: 8px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .save-btn {
+            flex: 1;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1em;
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .delete-btn {
+            flex: 1;
+            padding: 14px;
+            background: var(--color-danger);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1em;
+        }
+        .delete-btn:hover {
+            background: #e74c3c;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .delete-btn.hidden {
+            display: none;
+        }
+        
+        .rating-section {
+            background: var(--color-bg);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            border: 1px solid var(--color-border-light);
+        }
+        .rating-section-title {
+            font-weight: 700;
+            color: var(--color-text);
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+        .rating-item {
+            margin-bottom: 12px;
+        }
+        .rating-item:last-child {
+            margin-bottom: 0;
+        }
+        .rating-label {
+            font-size: 0.85em;
+            color: var(--color-text-light);
+            margin-bottom: 4px;
+        }
+        
+        .rating-input {
+            display: flex;
+            gap: 4px;
+            font-size: 1.5em;
+        }
+        .rating-star {
+            cursor: pointer;
+            color: var(--color-border-light);
+            transition: var(--transition);
+        }
+        .rating-star:hover,
+        .rating-star.active {
+            color: var(--color-warning);
+        }
+        
+        .book-details-grid, .movie-details-grid, .series-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .seasons-section {
+            background: var(--color-bg);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            border: 1px solid var(--color-border-light);
+        }
+        .season-item {
+            background: var(--color-bg-alt);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            border: 1px solid var(--color-border-light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .season-item:last-child {
+            margin-bottom: 0;
+        }
+        .season-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .season-label {
+            flex: 1;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        .season-episodes {
+            width: 100px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-muted);
+            background: var(--color-primary-light);
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-lg);
+        }
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 1024px) {
+            .app-layout { flex-direction: column; }
+            .nav-frame { width: 100%; height: auto; position: relative; }
+            .content-area { margin-left: 0; }
+            .media-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .book-details-grid, .movie-details-grid, .series-details-grid { grid-template-columns: 1fr; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="nav-frame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
+            <div class="nav-section"><div class="nav-title">MAIN</div><a href="index.html" class="nav-item">🏠 Home</a><a href="day.html" class="nav-item">📆 Day Planner</a></div>
+            <div class="nav-section"><div class="nav-title">PLANNING</div><a href="week.html" class="nav-item">📋 Week Planner</a><a href="month.html" class="nav-item">🗓️ Month Calendar</a><a href="year.html" class="nav-item">🎯 Year Goals</a></div>
+            <div class="nav-section"><div class="nav-title">TRACKERS</div><a href="habits.html" class="nav-item">🔥 Habit Tracker</a><a href="finance.html" class="nav-item">💰 Finance Tracker</a><a href="media.html" class="nav-item active">📚🎬 Media</a><a href="study.html" class="nav-item">📚 Study Tasks</a><a href="pomodoro.html" class="nav-item">🍅 Pomodoro Timer</a></div>
+        </nav>
+
+        <div class="content-area">
+            <div class="media-header">
+                <h1>📚🎬 Books & Movies</h1>
+                <button class="add-btn" onclick="openAddModal()">
+                    <span>➕</span>
+                    <span>Add New</span>
+                </button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('books')">📚 Books</button>
+                <button class="tab-btn" onclick="switchTab('movies')">🎬 Movies</button>
+                <button class="tab-btn" onclick="switchTab('series')">📺 Series</button>
+            </div>
+            
+            <div class="status-filters">
+                <button class="status-filter-btn active" onclick="switchStatusFilter('all')">All</button>
+                <button class="status-filter-btn" onclick="switchStatusFilter('planned')">📋 Planned</button>
+                <button class="status-filter-btn" onclick="switchStatusFilter('watching')" id="inProgressBtn">👀 In Progress</button>
+                <button class="status-filter-btn" onclick="switchStatusFilter('completed')">✅ Completed</button>
+            </div>
+            
+            <div class="media-grid" id="mediaGrid"></div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div id="mediaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">➕ Add New</h3>
+                <button class="close-modal" onclick="closeModal()">✖</button>
+            </div>
+            
+            <input type="hidden" id="mediaType" value="books">
+            
+            <div class="form-group">
+                <label for="mediaTitle">Title</label>
+                <input type="text" id="mediaTitle" placeholder="Enter title...">
+            </div>
+            
+            <div class="form-group">
+                <label for="mediaAuthor" id="authorLabel">✍️ Author</label>
+                <input type="text" id="mediaAuthor" placeholder="Author or director name...">
+            </div>
+            
+            <div class="form-group">
+                <label for="mediaPoster">Poster</label>
+                <div class="poster-preview" id="posterPreview">
+                    <span class="placeholder">🖼️</span>
+                </div>
+                <div class="file-input-wrapper">
+                    <div class="file-input-btn">📁 Upload Poster</div>
+                    <input type="file" id="mediaPoster" accept="image/*" onchange="handlePosterUpload(this)">
+                </div>
+                <div class="poster-hint">💡 Images will be compressed automatically. Max 2MB.</div>
+            </div>
+            
+            <!-- ✅ BOOK FIELDS -->
+            <div id="bookFields" class="hidden">
+                <div class="book-details-grid">
+                    <div class="form-group">
+                        <label for="bookGenre">📖 Genre</label>
+                        <select id="bookGenre">
+                            <option value="">Select genre...</option>
+                            <option value="fiction">Fiction</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="scifi">Sci-Fi</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="romance">Romance</option>
+                            <option value="thriller">Thriller</option>
+                            <option value="horror">Horror</option>
+                            <option value="history">History</option>
+                            <option value="biography">Biography</option>
+                            <option value="selfhelp">Self-Help</option>
+                            <option value="business">Business</option>
+                            <option value="science">Science</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookYear">📅 Year</label>
+                        <input type="number" id="bookYear" placeholder="2024" min="1000" max="2099">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookPages">📄 Pages</label>
+                        <input type="number" id="bookPages" placeholder="300" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookReadStart">📖 Start Date</label>
+                        <input type="date" id="bookReadStart">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookReadEnd">✅ End Date</label>
+                        <input type="date" id="bookReadEnd">
+                    </div>
+                </div>
+                
+                <div class="rating-section">
+                    <div class="rating-section-title">⭐ Ratings</div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">📖 Plot</div>
+                        <div class="rating-input" id="ratingPlot">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">👥 Characters</div>
+                        <div class="rating-input" id="ratingCharacters">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">🌟 Atmosphere</div>
+                        <div class="rating-input" id="ratingAtmosphere">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bookBestCharacter">🏆 Best Character</label>
+                        <input type="text" id="bookBestCharacter" placeholder="Character name...">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookWorstCharacter">💀 Worst Character</label>
+                        <input type="text" id="bookWorstCharacter" placeholder="Character name...">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bookPlot">📝 Synopsis</label>
+                    <textarea id="bookPlot" rows="3" placeholder="Describe plot without spoilers..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bookQuotes">💬 Quotes</label>
+                    <textarea id="bookQuotes" rows="4" placeholder="Your favorite quotes..."></textarea>
+                </div>
+            </div>
+            
+            <!-- ✅ MOVIE FIELDS -->
+            <div id="movieFields" class="hidden">
+                <div class="movie-details-grid">
+                    <div class="form-group">
+                        <label for="movieGenre">🎬 Genre</label>
+                        <select id="movieGenre">
+                            <option value="">Select genre...</option>
+                            <option value="action">Action</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="drama">Drama</option>
+                            <option value="horror">Horror</option>
+                            <option value="scifi">Sci-Fi</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="thriller">Thriller</option>
+                            <option value="romance">Romance</option>
+                            <option value="crime">Crime</option>
+                            <option value="documentary">Documentary</option>
+                            <option value="animation">Animation</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieYear">📅 Year</label>
+                        <input type="number" id="movieYear" placeholder="2024" min="1888" max="2099">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieWatchDate">📅 Watch Date</label>
+                        <input type="date" id="movieWatchDate">
+                    </div>
+                </div>
+                
+                <div class="rating-section">
+                    <div class="rating-section-title">⭐ Ratings</div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">🎭 Actors</div>
+                        <div class="rating-input" id="ratingActors">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">👥 Characters</div>
+                        <div class="rating-input" id="ratingMovieCharacters">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">📖 Plot</div>
+                        <div class="rating-input" id="ratingMoviePlot">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">💡 Originality</div>
+                        <div class="rating-input" id="ratingOriginality">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieBestCharacter">🏆 Best Character</label>
+                        <input type="text" id="movieBestCharacter" placeholder="Character name...">
+                    </div>
+                    <div class="form-group">
+                        <label for="movieWorstCharacter">💀 Worst Character</label>
+                        <input type="text" id="movieWorstCharacter" placeholder="Character name...">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="moviePlot">📝 Synopsis</label>
+                    <textarea id="moviePlot" rows="3" placeholder="Describe plot without spoilers..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="movieScene">🎬 Memorable Scene</label>
+                    <textarea id="movieScene" rows="3" placeholder="Describe the scene..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="movieQuotes">💬 Favorite Quote</label>
+                    <textarea id="movieQuotes" rows="3" placeholder="Your favorite quotes..."></textarea>
+                </div>
+            </div>
+            
+            <!-- ✅ SERIES FIELDS -->
+            <div id="seriesFields" class="hidden">
+                <div class="series-details-grid">
+                    <div class="form-group">
+                        <label for="seriesGenre">📺 Genre</label>
+                        <select id="seriesGenre">
+                            <option value="">Select genre...</option>
+                            <option value="action">Action</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="drama">Drama</option>
+                            <option value="horror">Horror</option>
+                            <option value="scifi">Sci-Fi</option>
+                            <option value="fantasy">Fantasy</option>
+                            <option value="thriller">Thriller</option>
+                            <option value="romance">Romance</option>
+                            <option value="crime">Crime</option>
+                            <option value="documentary">Documentary</option>
+                            <option value="animation">Animation</option>
+                            <option value="adventure">Adventure</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="seriesYear">📅 Year</label>
+                        <input type="number" id="seriesYear" placeholder="2024" min="1950" max="2099">
+                    </div>
+                    <div class="form-group">
+                        <label for="seriesSeasons">📺 Seasons</label>
+                        <input type="number" id="seriesSeasons" placeholder="3" min="1" max="50" onchange="generateSeasonsFields()">
+                    </div>
+                    <div class="form-group">
+                        <label for="seriesWatchDate">📅 Start Date</label>
+                        <input type="date" id="seriesWatchDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="seriesFavoriteEpisode">🌟 Favorite Episode</label>
+                        <input type="text" id="seriesFavoriteEpisode" placeholder="e.g., S02E05">
+                    </div>
+                </div>
+                
+                <!-- ✅ SEASONS FIELDS -->
+                <div class="seasons-section" id="seasonsSection">
+                    <div class="rating-section-title">📺 Seasons</div>
+                    <div id="seasonsContainer"></div>
+                </div>
+                
+                <div class="rating-section">
+                    <div class="rating-section-title">⭐ Ratings</div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">🎭 Actors</div>
+                        <div class="rating-input" id="ratingSeriesActors">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">👥 Characters</div>
+                        <div class="rating-input" id="ratingSeriesCharacters">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">📖 Plot</div>
+                        <div class="rating-input" id="ratingSeriesPlot">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                    
+                    <div class="rating-item">
+                        <div class="rating-label">💡 Originality</div>
+                        <div class="rating-input" id="ratingSeriesOriginality">
+                            <span class="rating-star" data-rating="1">☆</span>
+                            <span class="rating-star" data-rating="2">☆</span>
+                            <span class="rating-star" data-rating="3">☆</span>
+                            <span class="rating-star" data-rating="4">☆</span>
+                            <span class="rating-star" data-rating="5">☆</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="seriesBestCharacter">🏆 Best Character</label>
+                        <input type="text" id="seriesBestCharacter" placeholder="Character name...">
+                    </div>
+                    <div class="form-group">
+                        <label for="seriesWorstCharacter">💀 Worst Character</label>
+                        <input type="text" id="seriesWorstCharacter" placeholder="Character name...">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seriesPlot">📝 Synopsis</label>
+                    <textarea id="seriesPlot" rows="3" placeholder="Describe plot without spoilers..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seriesScene">🎬 Memorable Scene</label>
+                    <textarea id="seriesScene" rows="3" placeholder="Describe the scene..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seriesQuotes">💬 Favorite Quote</label>
+                    <textarea id="seriesQuotes" rows="3" placeholder="Your favorite quotes..."></textarea>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="mediaStatus">Status</label>
+                    <select id="mediaStatus">
+                        <option value="planned">📋 Planned</option>
+                        <option value="watching" id="inProgressOption">👀 In Progress</option>
+                        <option value="completed">✅ Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>⭐ Overall Rating</label>
+                    <div class="rating-input" id="ratingOverall">
+                        <span class="rating-star" data-rating="1">☆</span>
+                        <span class="rating-star" data-rating="2">☆</span>
+                        <span class="rating-star" data-rating="3">☆</span>
+                        <span class="rating-star" data-rating="4">☆</span>
+                        <span class="rating-star" data-rating="5">☆</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="mediaNotes">📝 Notes</label>
+                <textarea id="mediaNotes" rows="3" placeholder="Your thoughts..."></textarea>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="delete-btn hidden" id="deleteBtn" onclick="deleteMedia()">🗑️ Delete</button>
+                <button class="save-btn" onclick="saveMedia()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mediaData = JSON.parse(localStorage.getItem('mediaData')) || { items: [] };
+        let currentTab = 'books';
+        let currentStatusFilter = 'all';
+        let editingId = null;
+        let currentPosterData = null;
+        let currentRating = 0;
+        let bookRatings = { plot: 0, characters: 0, atmosphere: 0 };
+        let movieRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+        let seriesRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+        let firebaseReady = false;
+        let db = null;
+        let currentUser = null;
+        let useIndexedDB = false;
+        let mediaDB = null;
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I",
+            authDomain: "lifedashbord.firebaseapp.com",
+            projectId: "lifedashbord",
+            storageBucket: "lifedashbord.appspot.com",
+            messagingSenderId: "206574362724",
+            appId: "1:206574362724:web:83887cae4dc87b41137f71"
+        };
+        
+        // ✅ INDEXEDDB INITIALIZATION
+        function initIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('MediaDB', 1);
+                
+                request.onerror = () => {
+                    console.warn('⚠️ IndexedDB not available');
+                    resolve(false);
+                };
+                
+                request.onsuccess = () => {
+                    mediaDB = request.result;
+                    useIndexedDB = true;
+                    console.log('✅ IndexedDB initialized');
+                    resolve(true);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('posters')) {
+                        db.createObjectStore('posters', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+        
+        // ✅ SAVE POSTER TO INDEXEDDB
+        function savePosterToIndexedDB(id, posterData) {
+            return new Promise((resolve, reject) => {
+                if (!useIndexedDB || !mediaDB) {
+                    resolve(false);
+                    return;
+                }
+                
+                const transaction = mediaDB.transaction(['posters'], 'readwrite');
+                const store = transaction.objectStore('posters');
+                const request = store.put({ id, poster: posterData });
+                
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => reject(false);
+            });
+        }
+        
+        // ✅ LOAD POSTER FROM INDEXEDDB
+        function loadPosterFromIndexedDB(id) {
+            return new Promise((resolve, reject) => {
+                if (!useIndexedDB || !mediaDB) {
+                    resolve(null);
+                    return;
+                }
+                
+                const transaction = mediaDB.transaction(['posters'], 'readonly');
+                const store = transaction.objectStore('posters');
+                const request = store.get(id);
+                
+                request.onsuccess = () => resolve(request.result?.poster || null);
+                request.onerror = () => resolve(null);
+            });
+        }
+        
+        // ✅ IMAGE COMPRESSION
+        function compressImage(file, maxWidth = 400, maxHeight = 600, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > maxWidth) {
+                            height = (maxWidth / width) * height;
+                            width = maxWidth;
+                        }
+                        if (height > maxHeight) {
+                            width = (maxHeight / height) * width;
+                            height = maxHeight;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        console.log('🔵 Image compressed:', file.size, '→', compressedDataUrl.length);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                };
+                reader.onerror = reject;
+            });
+        }
+        
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            currentStatusFilter = 'all';
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.status-filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.status-filter-btn[onclick="switchStatusFilter(\'all\')"]').classList.add('active');
+            
+            updateLabels();
+            renderMedia();
+        };
+        
+        window.switchStatusFilter = function(status) {
+            currentStatusFilter = status;
+            
+            document.querySelectorAll('.status-filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderMedia();
+        };
+        
+        function updateLabels() {
+            const authorLabel = document.getElementById('authorLabel');
+            const inProgressBtn = document.getElementById('inProgressBtn');
+            const inProgressOption = document.getElementById('inProgressOption');
+            
+            if (currentTab === 'books') {
+                authorLabel.textContent = '✍️ Author';
+                inProgressBtn.textContent = '📖 Reading';
+                inProgressOption.textContent = '📖 Reading';
+            } else if (currentTab === 'movies') {
+                authorLabel.textContent = '🎬 Director';
+                inProgressBtn.textContent = '👀 Watching';
+                inProgressOption.textContent = '👀 Watching';
+            } else {
+                authorLabel.textContent = '📺 Creator';
+                inProgressBtn.textContent = '👀 Watching';
+                inProgressOption.textContent = '👀 Watching';
+            }
+        }
+        
+        window.generateSeasonsFields = function() {
+            const numSeasons = parseInt(document.getElementById('seriesSeasons').value) || 0;
+            const container = document.getElementById('seasonsContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= numSeasons; i++) {
+                const seasonDiv = document.createElement('div');
+                seasonDiv.className = 'season-item';
+                seasonDiv.innerHTML = `
+                    <input type="checkbox" class="season-checkbox" id="season_${i}_watched">
+                    <label class="season-label" for="season_${i}_watched">Season ${i}</label>
+                    <input type="number" class="season-episodes" id="season_${i}_episodes" placeholder="Episodes" min="1">
+                `;
+                container.appendChild(seasonDiv);
+            }
+        };
+        
+        window.openAddModal = function() {
+            console.log('🔵 Opening add modal');
+            editingId = null;
+            currentPosterData = null;
+            currentRating = 0;
+            bookRatings = { plot: 0, characters: 0, atmosphere: 0 };
+            movieRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+            seriesRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+            
+            document.getElementById('mediaType').value = currentTab;
+            document.getElementById('modalTitle').textContent = '➕ Add New';
+            document.getElementById('mediaTitle').value = '';
+            document.getElementById('mediaAuthor').value = '';
+            document.getElementById('mediaStatus').value = 'planned';
+            document.getElementById('mediaNotes').value = '';
+            document.getElementById('posterPreview').innerHTML = '<span class="placeholder">🖼️</span>';
+            document.getElementById('deleteBtn').classList.add('hidden');
+            
+            document.getElementById('bookGenre').value = '';
+            document.getElementById('bookYear').value = '';
+            document.getElementById('bookPages').value = '';
+            document.getElementById('bookReadStart').value = '';
+            document.getElementById('bookReadEnd').value = '';
+            document.getElementById('bookBestCharacter').value = '';
+            document.getElementById('bookWorstCharacter').value = '';
+            document.getElementById('bookPlot').value = '';
+            document.getElementById('bookQuotes').value = '';
+            
+            document.getElementById('movieGenre').value = '';
+            document.getElementById('movieYear').value = '';
+            document.getElementById('movieWatchDate').value = '';
+            document.getElementById('movieBestCharacter').value = '';
+            document.getElementById('movieWorstCharacter').value = '';
+            document.getElementById('moviePlot').value = '';
+            document.getElementById('movieScene').value = '';
+            document.getElementById('movieQuotes').value = '';
+            
+            document.getElementById('seriesGenre').value = '';
+            document.getElementById('seriesYear').value = '';
+            document.getElementById('seriesSeasons').value = '';
+            document.getElementById('seriesWatchDate').value = '';
+            document.getElementById('seriesFavoriteEpisode').value = '';
+            document.getElementById('seriesBestCharacter').value = '';
+            document.getElementById('seriesWorstCharacter').value = '';
+            document.getElementById('seriesPlot').value = '';
+            document.getElementById('seriesScene').value = '';
+            document.getElementById('seriesQuotes').value = '';
+            document.getElementById('seasonsContainer').innerHTML = '';
+            
+            updateLabels();
+            showHideFields();
+            resetBookRatings();
+            resetMovieRatings();
+            resetSeriesRatings();
+            updateRatingDisplay('ratingOverall');
+            
+            document.getElementById('mediaModal').style.display = 'flex';
+            console.log('✅ Modal opened');
+        };
+        
+        window.openEditModal = async function(id) {
+            console.log('🔵 Opening edit modal for:', id);
+            const item = (mediaData.items || []).find(i => i.id === id);
+            if (!item) {
+                console.error('❌ Item not found');
+                return;
+            }
+            
+            editingId = id;
+            currentPosterData = item.poster || null;
+            currentRating = item.rating || 0;
+            
+            // Load poster from IndexedDB if available
+            if (!currentPosterData && useIndexedDB) {
+                currentPosterData = await loadPosterFromIndexedDB(id);
+            }
+            
+            if (item.type === 'books') {
+                bookRatings = {
+                    plot: item.bookRatings?.plot || 0,
+                    characters: item.bookRatings?.characters || 0,
+                    atmosphere: item.bookRatings?.atmosphere || 0
+                };
+            } else if (item.type === 'movies') {
+                movieRatings = {
+                    actors: item.movieRatings?.actors || 0,
+                    characters: item.movieRatings?.characters || 0,
+                    plot: item.movieRatings?.plot || 0,
+                    originality: item.movieRatings?.originality || 0
+                };
+            } else if (item.type === 'series') {
+                seriesRatings = {
+                    actors: item.seriesRatings?.actors || 0,
+                    characters: item.seriesRatings?.characters || 0,
+                    plot: item.seriesRatings?.plot || 0,
+                    originality: item.seriesRatings?.originality || 0
+                };
+            }
+            
+            document.getElementById('modalTitle').textContent = '✏️ Edit';
+            document.getElementById('mediaType').value = item.type;
+            document.getElementById('mediaTitle').value = item.title;
+            document.getElementById('mediaAuthor').value = item.author || '';
+            document.getElementById('mediaStatus').value = item.status;
+            document.getElementById('mediaNotes').value = item.notes || '';
+            
+            if (currentPosterData) {
+                document.getElementById('posterPreview').innerHTML = '<img src="' + currentPosterData + '" alt="Poster">';
+            } else {
+                const icons = { books: '📚', movies: '🎬', series: '📺' };
+                document.getElementById('posterPreview').innerHTML = '<span class="placeholder">' + icons[item.type] + '</span>';
+            }
+            
+            if (item.type === 'books') {
+                document.getElementById('bookGenre').value = item.genre || '';
+                document.getElementById('bookYear').value = item.year || '';
+                document.getElementById('bookPages').value = item.pages || '';
+                document.getElementById('bookReadStart').value = item.readStart || '';
+                document.getElementById('bookReadEnd').value = item.readEnd || '';
+                document.getElementById('bookBestCharacter').value = item.bestCharacter || '';
+                document.getElementById('bookWorstCharacter').value = item.worstCharacter || '';
+                document.getElementById('bookPlot').value = item.plot || '';
+                document.getElementById('bookQuotes').value = item.quotes || '';
+            } else if (item.type === 'movies') {
+                document.getElementById('movieGenre').value = item.genre || '';
+                document.getElementById('movieYear').value = item.year || '';
+                document.getElementById('movieWatchDate').value = item.watchDate || '';
+                document.getElementById('movieBestCharacter').value = item.bestCharacter || '';
+                document.getElementById('movieWorstCharacter').value = item.worstCharacter || '';
+                document.getElementById('moviePlot').value = item.plot || '';
+                document.getElementById('movieScene').value = item.scene || '';
+                document.getElementById('movieQuotes').value = item.quotes || '';
+            } else if (item.type === 'series') {
+                document.getElementById('seriesGenre').value = item.genre || '';
+                document.getElementById('seriesYear').value = item.year || '';
+                document.getElementById('seriesSeasons').value = item.seasons?.length || '';
+                document.getElementById('seriesWatchDate').value = item.watchDate || '';
+                document.getElementById('seriesFavoriteEpisode').value = item.favoriteEpisode || '';
+                document.getElementById('seriesBestCharacter').value = item.bestCharacter || '';
+                document.getElementById('seriesWorstCharacter').value = item.worstCharacter || '';
+                document.getElementById('seriesPlot').value = item.plot || '';
+                document.getElementById('seriesScene').value = item.scene || '';
+                document.getElementById('seriesQuotes').value = item.quotes || '';
+                
+                if (item.seasons && item.seasons.length > 0) {
+                    generateSeasonsFields();
+                    item.seasons.forEach((season, index) => {
+                        const checkbox = document.getElementById(`season_${index + 1}_watched`);
+                        const episodesInput = document.getElementById(`season_${index + 1}_episodes`);
+                        if (checkbox) checkbox.checked = season.watched;
+                        if (episodesInput) episodesInput.value = season.episodes;
+                    });
+                }
+            }
+            
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            
+            updateLabels();
+            showHideFields();
+            updateRatingDisplay('ratingOverall');
+            updateBookRatingsDisplay();
+            updateMovieRatingsDisplay();
+            updateSeriesRatingsDisplay();
+            
+            document.getElementById('mediaModal').style.display = 'flex';
+            console.log('✅ Edit modal opened');
+        };
+        
+        window.closeModal = function() {
+            document.getElementById('mediaModal').style.display = 'none';
+        };
+        
+        window.handlePosterUpload = async function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            console.log('🔵 Uploading poster:', file.name, 'Size:', file.size);
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert('File too large! Maximum 2MB. Image will be compressed.');
+            }
+            
+            try {
+                const compressedData = await compressImage(file, 400, 600, 0.7);
+                currentPosterData = compressedData;
+                document.getElementById('posterPreview').innerHTML = '<img src="' + currentPosterData + '" alt="Poster">';
+                console.log('✅ Poster compressed and loaded');
+            } catch (e) {
+                console.error('❌ Image compression error:', e);
+                alert('Error uploading image');
+            }
+        };
+        
+        function showHideFields() {
+            const bookFields = document.getElementById('bookFields');
+            const movieFields = document.getElementById('movieFields');
+            const seriesFields = document.getElementById('seriesFields');
+            const type = document.getElementById('mediaType').value;
+            
+            if (type === 'books') {
+                bookFields.classList.remove('hidden');
+                movieFields.classList.add('hidden');
+                seriesFields.classList.add('hidden');
+            } else if (type === 'movies') {
+                bookFields.classList.add('hidden');
+                movieFields.classList.remove('hidden');
+                seriesFields.classList.add('hidden');
+            } else if (type === 'series') {
+                bookFields.classList.add('hidden');
+                movieFields.classList.add('hidden');
+                seriesFields.classList.remove('hidden');
+            }
+        }
+        
+        function setupRatingStars(containerId, callback) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const stars = container.querySelectorAll('.rating-star');
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    callback(rating);
+                });
+            });
+        }
+        
+        function updateRatingDisplay(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const stars = container.querySelectorAll('.rating-star');
+            stars.forEach(star => {
+                const rating = parseInt(star.dataset.rating);
+                if (rating <= currentRating) {
+                    star.textContent = '★';
+                    star.classList.add('active');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        function setupBookRatings() {
+            setupRatingStars('ratingPlot', function(rating) {
+                bookRatings.plot = rating;
+                updateBookRatingsDisplay();
+            });
+            setupRatingStars('ratingCharacters', function(rating) {
+                bookRatings.characters = rating;
+                updateBookRatingsDisplay();
+            });
+            setupRatingStars('ratingAtmosphere', function(rating) {
+                bookRatings.atmosphere = rating;
+                updateBookRatingsDisplay();
+            });
+            setupRatingStars('ratingOverall', function(rating) {
+                currentRating = rating;
+                updateRatingDisplay('ratingOverall');
+            });
+        }
+        
+        function setupMovieRatings() {
+            setupRatingStars('ratingActors', function(rating) {
+                movieRatings.actors = rating;
+                updateMovieRatingsDisplay();
+            });
+            setupRatingStars('ratingMovieCharacters', function(rating) {
+                movieRatings.characters = rating;
+                updateMovieRatingsDisplay();
+            });
+            setupRatingStars('ratingMoviePlot', function(rating) {
+                movieRatings.plot = rating;
+                updateMovieRatingsDisplay();
+            });
+            setupRatingStars('ratingOriginality', function(rating) {
+                movieRatings.originality = rating;
+                updateMovieRatingsDisplay();
+            });
+        }
+        
+        function setupSeriesRatings() {
+            setupRatingStars('ratingSeriesActors', function(rating) {
+                seriesRatings.actors = rating;
+                updateSeriesRatingsDisplay();
+            });
+            setupRatingStars('ratingSeriesCharacters', function(rating) {
+                seriesRatings.characters = rating;
+                updateSeriesRatingsDisplay();
+            });
+            setupRatingStars('ratingSeriesPlot', function(rating) {
+                seriesRatings.plot = rating;
+                updateSeriesRatingsDisplay();
+            });
+            setupRatingStars('ratingSeriesOriginality', function(rating) {
+                seriesRatings.originality = rating;
+                updateSeriesRatingsDisplay();
+            });
+        }
+        
+        function updateBookRatingsDisplay() {
+            const ratings = [
+                { id: 'ratingPlot', value: bookRatings.plot },
+                { id: 'ratingCharacters', value: bookRatings.characters },
+                { id: 'ratingAtmosphere', value: bookRatings.atmosphere }
+            ];
+            
+            ratings.forEach(({ id, value }) => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                
+                const stars = container.querySelectorAll('.rating-star');
+                stars.forEach(star => {
+                    const rating = parseInt(star.dataset.rating);
+                    if (rating <= value) {
+                        star.textContent = '★';
+                        star.classList.add('active');
+                    } else {
+                        star.textContent = '☆';
+                        star.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function updateMovieRatingsDisplay() {
+            const ratings = [
+                { id: 'ratingActors', value: movieRatings.actors },
+                { id: 'ratingMovieCharacters', value: movieRatings.characters },
+                { id: 'ratingMoviePlot', value: movieRatings.plot },
+                { id: 'ratingOriginality', value: movieRatings.originality }
+            ];
+            
+            ratings.forEach(({ id, value }) => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                
+                const stars = container.querySelectorAll('.rating-star');
+                stars.forEach(star => {
+                    const rating = parseInt(star.dataset.rating);
+                    if (rating <= value) {
+                        star.textContent = '★';
+                        star.classList.add('active');
+                    } else {
+                        star.textContent = '☆';
+                        star.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function updateSeriesRatingsDisplay() {
+            const ratings = [
+                { id: 'ratingSeriesActors', value: seriesRatings.actors },
+                { id: 'ratingSeriesCharacters', value: seriesRatings.characters },
+                { id: 'ratingSeriesPlot', value: seriesRatings.plot },
+                { id: 'ratingSeriesOriginality', value: seriesRatings.originality }
+            ];
+            
+            ratings.forEach(({ id, value }) => {
+                const container = document.getElementById(id);
+                if (!container) return;
+                
+                const stars = container.querySelectorAll('.rating-star');
+                stars.forEach(star => {
+                    const rating = parseInt(star.dataset.rating);
+                    if (rating <= value) {
+                        star.textContent = '★';
+                        star.classList.add('active');
+                    } else {
+                        star.textContent = '☆';
+                        star.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        function resetBookRatings() {
+            bookRatings = { plot: 0, characters: 0, atmosphere: 0 };
+            updateBookRatingsDisplay();
+        }
+        
+        function resetMovieRatings() {
+            movieRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+            updateMovieRatingsDisplay();
+        }
+        
+        function resetSeriesRatings() {
+            seriesRatings = { actors: 0, characters: 0, plot: 0, originality: 0 };
+            updateSeriesRatingsDisplay();
+        }
+        
+        function sortByStatus(items) {
+            const statusOrder = { 'planned': 1, 'watching': 2, 'completed': 3 };
+            return items.sort((a, b) => {
+                const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+                if (statusDiff !== 0) return statusDiff;
+                return new Date(b.updatedAt) - new Date(a.updatedAt);
+            });
+        }
+        
+        window.renderMedia = async function() {
+            console.log('🔵 Rendering media, tab:', currentTab, 'items:', mediaData.items?.length || 0);
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = '';
+            
+            let items = (mediaData.items || []).filter(item => item.type === currentTab);
+            
+            if (currentStatusFilter !== 'all') {
+                items = items.filter(item => item.status === currentStatusFilter);
+                
+                if (items.length === 0) {
+                    const icons = { books: '📚', movies: '🎬', series: '📺' };
+                    const names = { books: 'books', movies: 'movies', series: 'series' };
+                    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">' + icons[currentTab] + '</div><p>No ' + names[currentTab] + ' yet</p></div>';
+                    return;
+                }
+                
+                items.forEach(item => {
+                    const card = createMediaCard(item);
+                    grid.appendChild(card);
+                });
+            } else {
+                const planned = items.filter(i => i.status === 'planned');
+                const watching = items.filter(i => i.status === 'watching');
+                const completed = items.filter(i => i.status === 'completed');
+                
+                if (planned.length === 0 && watching.length === 0 && completed.length === 0) {
+                    const icons = { books: '📚', movies: '🎬', series: '📺' };
+                    const names = { books: 'books', movies: 'movies', series: 'series' };
+                    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">' + icons[currentTab] + '</div><p>No ' + names[currentTab] + ' yet</p><p>Click "Add New" to create your first entry!</p></div>';
+                    return;
+                }
+                
+                if (planned.length > 0) {
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = 'section-header';
+                    sectionHeader.innerHTML = '<div class="section-title">📋 Planned <span class="section-count">' + planned.length + '</span></div>';
+                    grid.appendChild(sectionHeader);
+                    
+                    planned.forEach(item => {
+                        const card = createMediaCard(item);
+                        grid.appendChild(card);
+                    });
+                }
+                
+                if (watching.length > 0) {
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = 'section-header';
+                    const processLabel = currentTab === 'books' ? '📖 Reading' : '👀 Watching';
+                    sectionHeader.innerHTML = '<div class="section-title">' + processLabel + ' <span class="section-count">' + watching.length + '</span></div>';
+                    grid.appendChild(sectionHeader);
+                    
+                    watching.forEach(item => {
+                        const card = createMediaCard(item);
+                        grid.appendChild(card);
+                    });
+                }
+                
+                if (completed.length > 0) {
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = 'section-header';
+                    sectionHeader.innerHTML = '<div class="section-title">✅ Completed <span class="section-count">' + completed.length + '</span></div>';
+                    grid.appendChild(sectionHeader);
+                    
+                    completed.forEach(item => {
+                        const card = createMediaCard(item);
+                        grid.appendChild(card);
+                    });
+                }
+            }
+        };
+        
+        function createMediaCard(item) {
+            const card = document.createElement('div');
+            card.className = 'media-card';
+            card.onclick = function() { openEditModal(item.id); };
+            
+            const statusLabels = { 
+                planned: 'Planned', 
+                watching: currentTab === 'books' ? 'Reading' : 'Watching', 
+                completed: 'Completed' 
+            };
+            const statusClass = { planned: 'status-planned', watching: 'status-watching', completed: 'status-completed' };
+            
+            let posterHtml = '<div class="media-poster">';
+            if (item.poster) {
+                posterHtml += '<img src="' + item.poster + '" alt="' + item.title + '">';
+            } else {
+                const icons = { books: '📚', movies: '🎬', series: '📺' };
+                posterHtml += icons[item.type] || '📌';
+            }
+            posterHtml += '</div>';
+            
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                stars += '<span class="star' + (i <= (item.rating || 0) ? '' : ' empty') + '">' + (i <= (item.rating || 0) ? '★' : '☆') + '</span>';
+            }
+            
+            card.innerHTML = posterHtml + '<div class="media-info"><div class="media-title">' + item.title + '</div><div class="media-meta"><span class="media-status ' + statusClass[item.status] + '">' + statusLabels[item.status] + '</span><div class="media-rating">' + stars + '</div></div></div>';
+            
+            return card;
+        }
+        
+        window.saveMedia = async function() {
+            console.log('🔵 saveMedia called');
+            
+            const type = document.getElementById('mediaType').value;
+            const title = document.getElementById('mediaTitle').value.trim();
+            const author = document.getElementById('mediaAuthor').value.trim();
+            const status = document.getElementById('mediaStatus').value;
+            const notes = document.getElementById('mediaNotes').value.trim();
+            
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+            
+            console.log('🔵 Saving:', { type, title, author, status });
+            
+            if (!mediaData.items) {
+                mediaData.items = [];
+                console.log('🔵 Initialized items array');
+            }
+            
+            const itemData = {
+                type: type,
+                title: title,
+                author: author,
+                status: status,
+                rating: currentRating,
+                notes: notes,
+                poster: null,  // ✅ DON'T SAVE POSTER IN localStorage
+                updatedAt: new Date().toISOString()
+            };
+            
+            if (type === 'books') {
+                itemData.genre = document.getElementById('bookGenre').value;
+                itemData.year = document.getElementById('bookYear').value;
+                itemData.pages = document.getElementById('bookPages').value;
+                itemData.readStart = document.getElementById('bookReadStart').value;
+                itemData.readEnd = document.getElementById('bookReadEnd').value;
+                itemData.bestCharacter = document.getElementById('bookBestCharacter').value;
+                itemData.worstCharacter = document.getElementById('bookWorstCharacter').value;
+                itemData.plot = document.getElementById('bookPlot').value;
+                itemData.quotes = document.getElementById('bookQuotes').value;
+                itemData.bookRatings = { ...bookRatings };
+            } else if (type === 'movies') {
+                itemData.genre = document.getElementById('movieGenre').value;
+                itemData.year = document.getElementById('movieYear').value;
+                itemData.watchDate = document.getElementById('movieWatchDate').value;
+                itemData.bestCharacter = document.getElementById('movieBestCharacter').value;
+                itemData.worstCharacter = document.getElementById('movieWorstCharacter').value;
+                itemData.plot = document.getElementById('moviePlot').value;
+                itemData.scene = document.getElementById('movieScene').value;
+                itemData.quotes = document.getElementById('movieQuotes').value;
+                itemData.movieRatings = { ...movieRatings };
+            } else if (type === 'series') {
+                itemData.genre = document.getElementById('seriesGenre').value;
+                itemData.year = document.getElementById('seriesYear').value;
+                itemData.watchDate = document.getElementById('seriesWatchDate').value;
+                itemData.favoriteEpisode = document.getElementById('seriesFavoriteEpisode').value;
+                itemData.bestCharacter = document.getElementById('seriesBestCharacter').value;
+                itemData.worstCharacter = document.getElementById('seriesWorstCharacter').value;
+                itemData.plot = document.getElementById('seriesPlot').value;
+                itemData.scene = document.getElementById('seriesScene').value;
+                itemData.quotes = document.getElementById('seriesQuotes').value;
+                itemData.seriesRatings = { ...seriesRatings };
+                
+                const numSeasons = parseInt(document.getElementById('seriesSeasons').value) || 0;
+                itemData.seasons = [];
+                for (let i = 1; i <= numSeasons; i++) {
+                    const checkbox = document.getElementById(`season_${i}_watched`);
+                    const episodesInput = document.getElementById(`season_${i}_episodes`);
+                    itemData.seasons.push({
+                        seasonNumber: i,
+                        watched: checkbox ? checkbox.checked : false,
+                        episodes: episodesInput ? parseInt(episodesInput.value) || 0 : 0
+                    });
+                }
+            }
+            
+            if (editingId) {
+                const index = mediaData.items.findIndex(i => i.id === editingId);
+                if (index !== -1) {
+                    mediaData.items[index] = { ...mediaData.items[index], ...itemData };
+                    console.log('✅ Item updated at index:', index);
+                } else {
+                    console.error('❌ Item not found for editing');
+                }
+            } else {
+                itemData.id = generateId();
+                itemData.createdAt = new Date().toISOString();
+                mediaData.items.push(itemData);
+                console.log('✅ Item added, total items:', mediaData.items.length);
+            }
+            
+            // ✅ SAVE POSTER ONLY TO INDEXEDDB
+            if (currentPosterData) {
+                if (useIndexedDB && mediaDB) {
+                    try {
+                        await savePosterToIndexedDB(editingId || itemData.id, currentPosterData);
+                        console.log('✅ Poster saved to IndexedDB ONLY');
+                    } catch (e) {
+                        console.error('❌ IndexedDB save failed:', e);
+                        alert('Error saving poster!');
+                        return;
+                    }
+                } else {
+                    console.warn('⚠️ IndexedDB unavailable, saving to localStorage');
+                    itemData.poster = currentPosterData;
+                }
+            }
+            
+            // ✅ SAVE TO LOCALSTORAGE (WITHOUT POSTERS)
+            try {
+                localStorage.setItem('mediaData', JSON.stringify(mediaData));
+                console.log('✅ Saved to localStorage');
+                
+                const saved = localStorage.getItem('mediaData');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    console.log('✅ Verified save, items:', parsed.items?.length || 0);
+                }
+            } catch (e) {
+                console.error('❌ localStorage save error:', e);
+                alert('Storage error! Try deleting old entries.');
+                return;
+            }
+            
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('media').doc('data').set(mediaData)
+                    .then(() => console.log('✅ Saved to Firebase'))
+                    .catch((e) => console.warn('⚠️ Firebase save failed:', e.message));
+            }
+            
+            renderMedia();
+            closeModal();
+            console.log('✅ Save complete!');
+        };
+        
+        window.deleteMedia = async function() {
+            if (!editingId) return;
+            if (!confirm('Delete this entry?')) return;
+            
+            mediaData.items = (mediaData.items || []).filter(i => i.id !== editingId);
+            
+            // Delete poster from IndexedDB
+            if (useIndexedDB && mediaDB) {
+                try {
+                    const transaction = mediaDB.transaction(['posters'], 'readwrite');
+                    const store = transaction.objectStore('posters');
+                    store.delete(editingId);
+                    console.log('✅ Poster deleted from IndexedDB');
+                } catch (e) {
+                    console.warn('⚠️ IndexedDB delete failed');
+                }
+            }
+            
+            saveMediaData();
+            renderMedia();
+            closeModal();
+        };
+        
+        function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+        
+        function saveMediaData() {
+            try {
+                localStorage.setItem('mediaData', JSON.stringify(mediaData));
+                console.log('✅ Saved to localStorage');
+            } catch (e) {
+                console.error('❌ localStorage error:', e);
+            }
+            
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('media').doc('data').set(mediaData)
+                    .catch(function(e) { console.warn('⚠️ Firebase error:', e); });
+            }
+        }
+        
+        // ✅ Fixed: using .then() without await to avoid syntax errors
+        function loadMediaData() {
+            if (!currentUser || !db) {
+                console.log('📂 Loading from localStorage');
+                renderMedia();
+                return;
+            }
+            
+            db.collection('users').doc(currentUser.uid).collection('media').doc('data').get().then(function(doc) {
+                if (doc.exists) {
+                    const loaded = doc.data();
+                    if (JSON.stringify(mediaData) !== JSON.stringify(loaded)) {
+                        mediaData = loaded;
+                        localStorage.setItem('mediaData', JSON.stringify(mediaData));
+                        console.log('✅ Loaded from Firebase, items:', mediaData.items?.length || 0);
+                        renderMedia();
+                    }
+                } else {
+                    console.log('📂 No Firebase data, using localStorage');
+                    renderMedia();
+                }
+            });
+        }
+        
+        // ✅ Fixed: using .then() without await to avoid syntax errors
+        async function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined') {
+                    console.log('⚠️ Firebase not loaded');
+                    return;
+                }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                var auth = firebase.auth();
+                auth.onAuthStateChanged(function(user) {
+                    if (user) { 
+                        currentUser = user; 
+                        firebaseReady = true; 
+                        console.log('✅ Firebase ready');
+                        loadMediaData(); 
+                    } else { 
+                        firebaseReady = false; 
+                        console.log('🔓 Not logged in, using localStorage');
+                    }
+                });
+            } catch (e) { 
+                console.warn('⚠️ Firebase init failed:', e.message); 
+                firebaseReady = false; 
+            }
+        }
+        
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔵 DOMContentLoaded');
+            
+            // Initialize IndexedDB
+            await initIndexedDB();
+            
+            console.log('🔵 Current localStorage items:', mediaData.items?.length || 0);
+            initFirebase();
+            renderMedia();
+            setupBookRatings();
+            setupMovieRatings();
+            setupSeriesRatings();
+            updateLabels();
+            console.log('✅ Initialization complete');
+        });
+    </script>
+</body>
+</html>

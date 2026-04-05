@@ -1,0 +1,313 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDashboard | Sign In</title>
+    <style>
+        :root {
+            --color-primary: #e38792;
+            --color-primary-dark: #BA494B;
+            --color-primary-light: #f7c4cb;
+            --color-secondary: #9dad71;
+            --color-secondary-dark: #7e8c5a;
+            --color-secondary-light: #d1ddb5;
+            --color-bg: #f2eee8;
+            --color-bg-alt: #ffffff;
+            --color-nav: #BA494B;
+            --color-text: #BA494B;
+            --color-text-light: #9a5a5c;
+            --color-border: #9dad71;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.2s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-secondary-light) 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--color-bg-alt);
+            border-radius: 32px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(186, 73, 75, 0.15);
+            border: 1px solid var(--color-border);
+        }
+
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { font-size: 2em; color: var(--color-primary); margin-bottom: 8px; }
+        .logo p { color: var(--color-text); font-size: 0.95em; }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            background: var(--color-primary-light);
+            padding: 6px;
+            border-radius: 25px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: var(--transition);
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        .tab.active { background: var(--color-primary); color: white; }
+
+        .form-panel { display: none; }
+        .form-panel.active { display: block; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--color-primary); }
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(227, 135, 146, 0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border: none;
+            border-radius: var(--radius-xl);
+            font-size: 1rem;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: var(--transition);
+        }
+        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-primary:disabled { background: var(--color-secondary-light); cursor: not-allowed; transform: none; }
+
+        .error-message { color: var(--color-danger); font-size: 0.85em; margin-top: 12px; text-align: center; min-height: 20px; }
+        .success-message { color: var(--color-secondary); font-size: 0.85em; margin-top: 12px; text-align: center; }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-secondary-light) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .loading-overlay.hidden { display: none; }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--color-border);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: var(--color-primary); font-size: 1.1em; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <div class="auth-card">
+        <div class="logo">
+            <h1>📅 LifeDashboard</h1>
+            <p>Complete Productivity Suite</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('signin')">Sign In</div>
+            <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+        </div>
+
+        <!-- Sign In Form -->
+        <div id="signinPanel" class="form-panel active">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signinEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signinPassword" placeholder="••••••••">
+            </div>
+            <button class="btn-primary" onclick="signIn()">Sign In</button>
+            <div id="signinError" class="error-message"></div>
+        </div>
+
+        <!-- Sign Up Form -->
+        <div id="signupPanel" class="form-panel">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="signupName" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signupEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signupPassword" placeholder="•••••••• (min 6 chars)">
+            </div>
+            <button class="btn-primary" onclick="signUp()">Create Account</button>
+            <div id="signupError" class="error-message"></div>
+            <div id="signupSuccess" class="success-message"></div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I",
+            authDomain: "lifedashbord.firebaseapp.com",
+            projectId: "lifedashbord",
+            storageBucket: "lifedashbord.appspot.com",
+            messagingSenderId: "206574362724",
+            appId: "1:206574362724:web:83887cae4dc87b41137f71"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Check if user is already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+
+            if (tab === 'signin') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('signinPanel').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('signupPanel').classList.add('active');
+            }
+            clearErrors();
+        }
+
+        function clearErrors() {
+            document.getElementById('signinError').textContent = '';
+            document.getElementById('signupError').textContent = '';
+            document.getElementById('signupSuccess').textContent = '';
+        }
+
+        async function signIn() {
+            const email = document.getElementById('signinEmail').value.trim();
+            const password = document.getElementById('signinPassword').value;
+            const errorDiv = document.getElementById('signinError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // User will be redirected by onAuthStateChanged
+            } catch (error) {
+                errorDiv.textContent = error.message.replace('Firebase: ', '');
+            }
+        }
+
+        async function signUp() {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const errorDiv = document.getElementById('signupError');
+            const successDiv = document.getElementById('signupSuccess');
+
+            if (!name || !email || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await userCredential.user.updateProfile({ displayName: name });
+
+                // ✅ Save user profile to Firestore for sync (with .catch to prevent breaking)
+                db.collection('users').doc(userCredential.user.uid).set({
+                    displayName: name,
+                    email: email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(function(err) {
+                    console.log('⚠️ Profile save failed (sync will retry):', err.message);
+                });
+
+                successDiv.textContent = 'Account created! Redirecting...';
+                errorDiv.textContent = '';
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                errorDiv.textContent = error.message.replace('Firebase: ', '');
+                successDiv.textContent = '';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const signinPanel = document.getElementById('signinPanel');
+                const signupPanel = document.getElementById('signupPanel');
+                if (signinPanel.classList.contains('active')) {
+                    signIn();
+                } else if (signupPanel.classList.contains('active')) {
+                    signUp();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

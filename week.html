@@ -1,0 +1,342 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDashboard | Week Planner</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --color-primary: #e38792; --color-primary-dark: #BA494B; --color-primary-light: #f7c4cb; --color-secondary: #9dad71; --color-secondary-dark: #7e8c5a; --color-secondary-light: #d1ddb5; --color-bg: #f2eee8; --color-bg-alt: #ffffff; --color-nav: #BA494B; --color-text: #BA494B; --color-text-light: #9a5a5c; --color-text-muted: #c49a9b; --color-border: #9dad71; --color-border-light: #d1ddb5; --shadow-sm: 0 2px 8px rgba(186, 73, 75, 0.05); --shadow-md: 0 4px 15px rgba(186, 73, 75, 0.08); --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --transition: all 0.2s ease; }
+        .week-interval { text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--color-text); font-size: 1.1em; }
+        .week-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 10px; flex-wrap: wrap; }
+        .week-table { width: 100%; border-collapse: collapse; background: var(--color-bg-alt); border-radius: var(--radius-lg); overflow-x: auto; display: block; }
+        .week-table thead, .week-table tbody { display: table; width: 100%; table-layout: fixed; }
+        .week-table th, .week-table td { border: 1px solid var(--color-border); padding: 12px 8px; vertical-align: top; background: var(--color-bg-alt); word-break: break-word; font-size: 0.9em; }
+        .week-table th { background: var(--color-nav); color: white; cursor: pointer; font-weight: 600; width: 14.28%; transition: var(--transition); }
+        .week-table th:hover { background: var(--color-primary-dark); }
+        .task-item { display: block; margin-bottom: 6px; cursor: pointer; transition: var(--transition); border-radius: var(--radius-md); overflow: hidden; position: relative; }
+        .task-item:hover { transform: translateX(2px); filter: brightness(0.96); box-shadow: var(--shadow-sm); }
+        .task-item.important { border: 3px solid #FFD700; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); }
+        .task-item.important::before { content: '🔥'; position: absolute; top: -6px; right: -6px; font-size: 1.3em; background: var(--color-bg-alt); border-radius: 50%; padding: 3px; z-index: 1; }
+        .task-block { display: flex; flex-direction: column; padding: 8px 10px; border-radius: var(--radius-md); transition: var(--transition); gap: 5px; }
+        .task-header { display: flex; align-items: center; gap: 6px; }
+        .task-checkbox-week { width: 16px; height: 16px; cursor: pointer; accent-color: white; flex-shrink: 0; pointer-events: auto; }
+        .task-time-range { font-size: 0.75em; font-weight: 600; opacity: 0.9; color: inherit; display: flex; align-items: center; gap: 3px; }
+        .task-time-range::before { content: '⏰'; font-size: 1.2em; }
+        .task-text { font-size: 0.95em; font-weight: 500; word-break: break-word; line-height: 1.3; color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .task-text.completed { text-decoration: line-through; opacity: 0.7; }
+        .task-footer { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+        .task-category-badge { font-size: 0.75em; opacity: 0.9; display: inline-block; color: inherit; font-weight: 600; }
+        .important-badge { font-size: 0.75em; padding: 2px 6px; border-radius: var(--radius-sm); background: #FFD700; color: #000; font-weight: 700; }
+        .delete-task-btn-week { background: rgba(255,255,255,0.3); border: none; padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 0.9em; color: inherit; transition: var(--transition); }
+        .delete-task-btn-week:hover { background: rgba(0,0,0,0.3); }
+        .category-work { background: var(--color-primary); color: white; }
+        .category-study { background: var(--color-primary-light); color: var(--color-text); }
+        .category-hobby { background: var(--color-bg); color: var(--color-text); border: 1px solid var(--color-border); }
+        .category-rest { background: var(--color-secondary); color: white; }
+        .category-family { background: var(--color-secondary-light); color: var(--color-text); }
+        .category-sport { background: var(--color-secondary-dark); color: white; }
+        .category-selfdev { background: var(--color-border-light); color: var(--color-text); }
+        button { background: var(--color-primary); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-md); cursor: pointer; font-weight: 600; transition: var(--transition); font-size: 0.9em; }
+        button:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+        .form-group input, .form-group select, .form-group textarea { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px; color: var(--color-text); width: 100%; box-sizing: border-box; }
+        .form-group label { color: var(--color-primary); font-weight: 600; margin-bottom: 4px; display: block; }
+        .time-row { display: flex; gap: 10px; align-items: center; }
+        .time-row input { flex: 1; }
+        .time-separator { font-weight: bold; color: var(--color-text); }
+        .modal-tasks { max-width: 550px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(186, 73, 75, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--color-bg-alt); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; border: 2px solid var(--color-border); box-shadow: var(--shadow-md); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--color-border); }
+        .modal-header h3 { color: var(--color-primary); font-weight: 700; margin: 0; }
+        .close-modal { background: none; border: none; font-size: 1.4em; cursor: pointer; color: var(--color-primary); padding: 0; width: auto; height: auto; }
+        .close-modal:hover { background: none; transform: none; color: var(--color-primary-dark); }
+        .card h2 { color: var(--color-text); border-bottom: 2px solid var(--color-border); padding-bottom: 8px; margin-bottom: 16px; }
+        .btn-sm { padding: 6px 12px !important; font-size: 0.8em !important; height: 28px !important; }
+        .empty-state { color: var(--color-text-muted); text-align: center; padding: 12px; font-size: 0.85em; }
+        @media (max-width: 768px) { .week-table th, .week-table td { padding: 10px 5px; font-size: 0.85em; } .task-text { font-size: 0.9em; } .task-category-badge { font-size: 0.7em; } }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="nav-frame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
+            <div class="nav-section"><div class="nav-title">MAIN</div><a href="index.html" class="nav-item">🏠 Home</a><a href="day.html" class="nav-item">📆 Day Planner</a></div>
+            <div class="nav-section"><div class="nav-title">PLANNING</div><a href="week.html" class="nav-item active">📋 Week Planner</a><a href="month.html" class="nav-item">🗓️ Month Calendar</a><a href="year.html" class="nav-item">🎯 Year Goals</a></div>
+            <div class="nav-section"><div class="nav-title">TRACKERS</div><a href="habits.html" class="nav-item">🔥 Habit Tracker</a><a href="finance.html" class="nav-item">💰 Finance Tracker</a><a href="media.html" class="nav-item">📚🎬 Books & Movies</a><a href="study.html" class="nav-item">📚 Study Tasks</a><a href="pomodoro.html" class="nav-item">🍅 Pomodoro Timer</a></div>
+        </nav>
+
+        <div class="content-area">
+            <div class="card">
+                <h2>📋 Weekly Planner</h2>
+                <div class="week-nav">
+                    <button onclick="prevWeek()">◀ Previous Week</button>
+                    <button onclick="goToCurrentWeek()">Current Week</button>
+                    <button onclick="nextWeek()">Next Week ▶</button>
+                </div>
+                <div class="week-interval" id="weekInterval"></div>
+                <div style="overflow-x: auto;"><div id="weekPlannerContent"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content modal-tasks">
+            <div class="modal-header"><h3 id="taskModalTitle">📝 Task</h3><button class="close-modal" onclick="closeTaskModal()">✖</button></div>
+            <div class="form-group"><label>Task Title</label><input type="text" id="taskTitle"></div>
+            <div class="form-group"><label>Time Range (optional)</label><div class="time-row"><input type="time" id="taskStartTime" placeholder="Start"><span class="time-separator">—</span><input type="time" id="taskEndTime" placeholder="End"></div></div>
+            <div class="form-group"><label>Category</label><select id="taskCategory"><option value="work">💼 Work</option><option value="study">📚 Study</option><option value="hobby">🎨 Hobby</option><option value="rest">😌 Rest</option><option value="family">👨‍👩‍👧 Family</option><option value="sport">⚽ Sport</option><option value="selfdev">🌱 Self Development</option></select></div>
+            <div class="form-group"><label>⚠️ Important</label><div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="taskImportant" style="width:20px;height:20px;"><span style="color:var(--color-text);font-weight:500;">Mark as Important</span></div></div>
+            <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="3"></textarea></div>
+            <div style="display:flex;gap:10px;margin-top:10px;"><button onclick="saveTask()" style="flex:1;">💾 Save</button><button id="modalDeleteBtn" onclick="deleteCurrentTask()" style="flex:1;display:none;">🗑️ Delete</button></div>
+        </div>
+    </div>
+
+    <script>
+        let currentWeekOffset = 0;
+        let currentEditTask = { dateKey: null, taskId: null };
+        let currentUser = null;
+        let allTasks = JSON.parse(localStorage.getItem('allTasks')) || {};
+        let firebaseReady = false;
+        let db = null;
+        const firebaseConfig = { apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I", authDomain: "lifedashbord.firebaseapp.com", projectId: "lifedashbord", storageBucket: "lifedashbord.appspot.com", messagingSenderId: "206574362724", appId: "1:206574362724:web:83887cae4dc87b41137f71" };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // ✅ Initialize Firebase (non-blocking)
+            initFirebase();
+            // ✅ Render immediately from localStorage (no wait for Firebase)
+            renderWeekPlanner();
+        });
+        
+        function initFirebase() {
+            var firebaseTimeout = setTimeout(function() { firebaseReady = false; }, 5000);
+            try {
+                if (typeof firebase === 'undefined') { clearTimeout(firebaseTimeout); return; }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                var auth = firebase.auth();
+                auth.onAuthStateChanged(function(user) {
+                    clearTimeout(firebaseTimeout);
+                    if (user) { 
+                        currentUser = user; 
+                        firebaseReady = true;
+                        // ✅ Load from Firebase in background (non-blocking)
+                        loadTasksData();
+                    }
+                    else { firebaseReady = false; }
+                });
+            } catch (e) { clearTimeout(firebaseTimeout); firebaseReady = false; }
+        }
+        
+        // ✅ Fixed: using .then() without await to avoid syntax errors
+        function loadTasksData() {
+            if (!currentUser || !db) return;
+            db.collection('users').doc(currentUser.uid).collection('tasks').get().then(function(snapshot) {
+                const loaded = {};
+                snapshot.forEach(function(doc) { loaded[doc.id] = doc.data(); });
+                // Only update if data differs
+                if (JSON.stringify(allTasks) !== JSON.stringify(loaded)) {
+                    allTasks = loaded;
+                    localStorage.setItem('allTasks', JSON.stringify(allTasks));
+                    renderWeekPlanner();
+                }
+            });
+        }
+        
+        function saveTasksData() {
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) {
+                Object.keys(allTasks).forEach(function(dateKey) {
+                    db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateKey)
+                        .set(allTasks[dateKey]);
+                });
+            }
+        }
+        
+        function getDateKey(date) { return date.toISOString().split('T')[0]; }
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]); }); }
+        function getCategoryClass(cat) { var c = { work: 'category-work', study: 'category-study', hobby: 'category-hobby', rest: 'category-rest', family: 'category-family', sport: 'category-sport', selfdev: 'category-selfdev' }; return c[cat] || 'category-work'; }
+        function getCategoryIcon(cat) { var i = { work: '💼', study: '📚', hobby: '🎨', rest: '😌', family: '👨‍👩‍👧', sport: '⚽', selfdev: '🌱' }; return i[cat] || '📌'; }
+        function formatTimeRange(start, end) { if (!start && !end) return ''; if (start && !end) return start; if (!start && end) return '— ' + end; return start + ' — ' + end; }
+        function formatDate(date) { return date.getDate() + '.' + (date.getMonth() + 1); }
+        function getStartOfWeek(date, offset) { var d = new Date(date); var day = d.getDay(); var diff = day === 0 ? -6 : 1 - day; d.setDate(d.getDate() + diff + (offset * 7)); return d; }
+        function generateTaskId() { return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
+        
+        function renderWeekPlanner() {
+            var today = new Date();
+            var startOfWeek = getStartOfWeek(today, currentWeekOffset);
+            var endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            document.getElementById('weekInterval').innerHTML = '📅 ' + formatDate(startOfWeek) + ' - ' + formatDate(endOfWeek) + ' (' + startOfWeek.getFullYear() + ')';
+            var days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            var headerHtml = '<table class="week-table"><thead><tr>';
+            for (var i = 0; i < 7; i++) {
+                var currentDate = new Date(startOfWeek);
+                currentDate.setDate(startOfWeek.getDate() + i);
+                var dateStr = getDateKey(currentDate);
+                var dayNum = currentDate.getDate();
+                headerHtml += '<th onclick="openTaskModal(\'' + dateStr + '\')">' + days[i] + '<br><span style="font-size:0.8em;">' + dayNum + '</span></th>';
+            }
+            headerHtml += '</tr></thead><tbody><tr>';
+            var bodyHtml = '';
+            for (var i = 0; i < 7; i++) {
+                var currentDate = new Date(startOfWeek);
+                currentDate.setDate(startOfWeek.getDate() + i);
+                var key = getDateKey(currentDate);
+                var tasks = allTasks[key]?.tasks || [];
+                if (!tasks) tasks = [];
+                tasks.sort(function(a, b) {
+                    if (a.important && !b.important) return -1;
+                    if (!a.important && b.important) return 1;
+                    if (a.completed && !b.completed) return 1;
+                    if (!a.completed && b.completed) return -1;
+                    return (a.startTime || '00:00').localeCompare(b.startTime || '00:00');
+                });
+                var tasksHtml = '';
+                for (var idx = 0; idx < tasks.length; idx++) {
+                    var task = tasks[idx];
+                    var taskId = task.id;
+                    var timeRange = formatTimeRange(task.startTime, task.endTime);
+                    var categoryClass = getCategoryClass(task.category);
+                    var completedClass = task.completed ? 'task-completed' : '';
+                    var importantClass = task.important ? 'important' : '';
+                    var importantBadge = task.important ? '<span class="important-badge">🔥 Important</span>' : '';
+                    var clickAction = task.completed ? '' : 'openTaskModal(\'' + key + '\', \'' + taskId + '\')';
+                    tasksHtml += '<div class="task-item ' + categoryClass + ' ' + completedClass + ' ' + importantClass + '" onclick="' + clickAction + '">' +
+                        '<div class="task-block ' + categoryClass + '">' +
+                        '<div class="task-header">' +
+                        '<input type="checkbox" class="task-checkbox-week" ' + (task.completed ? 'checked' : '') + ' onclick="event.stopPropagation(); toggleTaskComplete(\'' + key + '\', \'' + taskId + '\', this.checked)">' +
+                        (timeRange ? '<div class="task-time-range">' + timeRange + '</div>' : '') +
+                        '</div>' +
+                        '<div class="task-text ' + (task.completed ? 'completed' : '') + '" title="' + escapeHtml(task.text) + '">' + escapeHtml(task.text) + '</div>' +
+                        '<div class="task-footer">' +
+                        '<div style="display:flex;gap:4px;align-items:center;"><span class="task-category-badge">' + getCategoryIcon(task.category) + ' ' + task.category + '</span>' + importantBadge + '</div>' +
+                        '<button class="delete-task-btn-week" onclick="event.stopPropagation(); deleteTaskFromWeek(\'' + key + '\', \'' + taskId + '\')" title="Delete task">✖</button>' +
+                        '</div>' +
+                        '</div></div>';
+                }
+                if (tasksHtml === '') tasksHtml = '<div class="empty-state">—</div>';
+                bodyHtml += '<td style="vertical-align:top;">' + tasksHtml + '</td>';
+            }
+            bodyHtml += '</tr></tbody></table>';
+            document.getElementById('weekPlannerContent').innerHTML = headerHtml + bodyHtml;
+        }
+        
+        window.openTaskModal = function(dateKey, taskId) {
+            var tasks = allTasks[dateKey]?.tasks || [];
+            if (!tasks) tasks = [];
+            var task = tasks.find(t => t.id === taskId);
+            if (task) {
+                currentEditTask = { dateKey: dateKey, taskId: taskId };
+                document.getElementById('taskModalTitle').innerHTML = '✏️ Edit Task';
+                document.getElementById('taskTitle').value = task.text;
+                document.getElementById('taskStartTime').value = task.startTime || '';
+                document.getElementById('taskEndTime').value = task.endTime || '';
+                document.getElementById('taskCategory').value = task.category || 'work';
+                document.getElementById('taskImportant').checked = task.important || false;
+                document.getElementById('taskNotes').value = task.notes || '';
+                document.getElementById('modalDeleteBtn').style.display = 'block';
+                document.getElementById('taskModal').classList.add('active');
+                return;
+            }
+            currentEditTask = { dateKey: dateKey, taskId: null };
+            document.getElementById('taskModalTitle').innerHTML = '📝 Add New Task';
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskStartTime').value = '';
+            document.getElementById('taskEndTime').value = '';
+            document.getElementById('taskCategory').value = 'work';
+            document.getElementById('taskImportant').checked = false;
+            document.getElementById('taskNotes').value = '';
+            document.getElementById('modalDeleteBtn').style.display = 'none';
+            document.getElementById('taskModal').classList.add('active');
+        };
+        
+        window.closeTaskModal = function() { document.getElementById('taskModal').classList.remove('active'); };
+        
+        window.saveTask = function() {
+            var title = document.getElementById('taskTitle').value.trim();
+            if (!title) { return; }
+            var startTime = document.getElementById('taskStartTime').value;
+            var endTime = document.getElementById('taskEndTime').value;
+            var category = document.getElementById('taskCategory').value;
+            var important = document.getElementById('taskImportant').checked;
+            var notes = document.getElementById('taskNotes').value;
+            if (!allTasks[currentEditTask.dateKey]) allTasks[currentEditTask.dateKey] = { tasks: [] };
+            var taskData = { text: title, startTime: startTime || null, endTime: endTime || null, category: category, important: important, completed: false, notes: notes };
+            if (currentEditTask.taskId) {
+                var taskIndex = allTasks[currentEditTask.dateKey].tasks.findIndex(t => t.id === currentEditTask.taskId);
+                if (taskIndex !== -1) allTasks[currentEditTask.dateKey].tasks[taskIndex] = { ...allTasks[currentEditTask.dateKey].tasks[taskIndex], ...taskData };
+            } else {
+                taskData.id = generateTaskId();
+                allTasks[currentEditTask.dateKey].tasks.push(taskData);
+            }
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) { 
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(currentEditTask.dateKey)
+                    .set({ tasks: allTasks[currentEditTask.dateKey].tasks });
+            }
+            window.closeTaskModal();
+            renderWeekPlanner();
+        };
+        
+        window.deleteCurrentTask = function() {
+            if (currentEditTask.taskId && currentEditTask.dateKey) {
+                var tasks = allTasks[currentEditTask.dateKey]?.tasks || [];
+                var taskIndex = tasks.findIndex(t => t.id === currentEditTask.taskId);
+                if (taskIndex !== -1) {
+                    allTasks[currentEditTask.dateKey].tasks.splice(taskIndex, 1);
+                    localStorage.setItem('allTasks', JSON.stringify(allTasks));
+                    // ✅ Sync to Firebase (non-blocking)
+                    if (firebaseReady && currentUser && db) { 
+                        var ref = db.collection('users').doc(currentUser.uid).collection('tasks').doc(currentEditTask.dateKey); 
+                        if (allTasks[currentEditTask.dateKey].tasks.length === 0) { ref.delete(); } 
+                        else { ref.set({ tasks: allTasks[currentEditTask.dateKey].tasks }); } 
+                    }
+                    window.closeTaskModal();
+                    renderWeekPlanner();
+                }
+            }
+        };
+        
+        window.deleteTaskFromWeek = function(dateKey, taskId) {
+            var tasks = allTasks[dateKey]?.tasks || [];
+            var taskIndex = tasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) return;
+            allTasks[dateKey].tasks.splice(taskIndex, 1);
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) { 
+                var ref = db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateKey); 
+                if (allTasks[dateKey].tasks.length === 0) { ref.delete(); } 
+                else { ref.set({ tasks: allTasks[dateKey].tasks }); } 
+            }
+            renderWeekPlanner();
+        };
+        
+        window.toggleTaskComplete = function(dateKey, taskId, checked) {
+            var tasks = allTasks[dateKey]?.tasks || [];
+            var task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            task.completed = checked;
+            localStorage.setItem('allTasks', JSON.stringify(allTasks));
+            // ✅ Sync to Firebase (non-blocking)
+            if (firebaseReady && currentUser && db) { 
+                db.collection('users').doc(currentUser.uid).collection('tasks').doc(dateKey)
+                    .set({ tasks: allTasks[dateKey].tasks });
+            }
+            renderWeekPlanner();
+        };
+        
+        window.prevWeek = function() { currentWeekOffset--; renderWeekPlanner(); };
+        window.nextWeek = function() { currentWeekOffset++; renderWeekPlanner(); };
+        window.goToCurrentWeek = function() { currentWeekOffset = 0; renderWeekPlanner(); };
+    </script>
+</body>
+</html>

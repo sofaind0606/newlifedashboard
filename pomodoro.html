@@ -1,0 +1,906 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeDashboard | Pomodoro Timer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --color-primary: #E59B90;
+            --color-primary-dark: #c97b6f;
+            --color-primary-light: #f7c7bf;
+            --color-secondary: #A4A884;
+            --color-secondary-dark: #8a8e6c;
+            --color-secondary-light: #d0d4b6;
+            --color-accent: #620607;
+            --color-text: #620607;
+            --color-text-light: #8a3a3c;
+            --color-text-muted: #b57a7c;
+            --color-nav: #E59B90;
+            --color-nav-light: #D18B80;
+            --color-border: #A4A884;
+            --color-border-light: #d0d4b6;
+            --color-bg: #F9FBED;
+            --color-bg-alt: #ffffff;
+            --color-success: #6bcb77;
+            --color-success-light: #d4edda;
+            --color-warning: #ffd93d;
+            --color-warning-light: #fff3cd;
+            --color-danger: #ff6b6b;
+            --color-danger-light: #f8d7da;
+            --color-info: #3498db;
+            --color-info-light: #d6eaf8;
+            --shadow-sm: 0 2px 8px rgba(98, 6, 7, 0.05);
+            --shadow-md: 0 4px 15px rgba(98, 6, 7, 0.08);
+            --shadow-lg: 0 10px 30px rgba(98, 6, 7, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--color-bg); min-height: 100vh; color: var(--color-text); }
+        
+        .app-layout { display: flex; min-height: 100vh; }
+        .nav-frame {
+            width: 18%;
+            min-width: 200px;
+            background: #E59B90;
+            padding: 24px 16px;
+            border-right: 2px solid var(--color-primary);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 4px 0 20px rgba(198, 61, 77, 0.15);
+        }
+        .logo { margin-bottom: 16px; padding: 12px; border-bottom: 2px solid #ffffff; text-align: center; background: rgba(255, 255, 255, 0.1); border-radius: 12px; }
+        .logo h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; margin: 0; }
+        .logo p { color: var(--color-bg); font-size: 0.75rem; margin-top: 2px; opacity: 0.9; }
+        .nav-section { margin-bottom: 20px; }
+        .nav-title { color: rgba(255,255,255,0.7); font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; padding-left: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: whitesmoke; text-decoration: none; border-radius: var(--radius-md); margin-bottom: 4px; transition: var(--transition); font-weight: 600; }
+        .nav-item:hover { background: var(--color-primary); color: #BA494B; transform: translateX(4px); }
+        .nav-item.active { background: #BA494B; color: whitesmoke; font-weight: 700; }
+        
+        .content-area { flex: 1; margin-left: 18%; padding: 24px 32px; }
+        
+        .pomodoro-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .timer-card {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            border: 2px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .timer-display {
+            font-size: 5em;
+            font-weight: 700;
+            color: var(--color-primary);
+            font-family: 'Courier New', monospace;
+            margin: 30px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .timer-btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-weight: 700;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, var(--color-success) 0%, #5cb85c 100%);
+            color: white;
+        }
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-pause {
+            background: linear-gradient(135deg, var(--color-warning) 0%, #ffc107 100%);
+            color: #000;
+        }
+        .btn-pause:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-reset {
+            background: var(--color-bg);
+            color: var(--color-primary);
+            border: 2px solid var(--color-border);
+        }
+        .btn-reset:hover {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .mode-btn {
+            padding: 10px 20px;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .mode-btn:hover {
+            border-color: var(--color-primary);
+        }
+        
+        .mode-btn.active {
+            background: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        
+        .settings-card {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 2px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 30px;
+        }
+        
+        .settings-card h3 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .setting-item label {
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 0.9em;
+        }
+        
+        .setting-item input {
+            padding: 10px 14px;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 1em;
+            text-align: center;
+        }
+        
+        .setting-item input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(229, 155, 144, 0.2);
+        }
+        
+        /* ✅ MUSIC SECTION STYLES */
+        .music-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--color-border-light);
+        }
+        .music-section h4 {
+            color: var(--color-primary);
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+        .music-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .music-file-input {
+            display: none;
+        }
+        .music-file-label {
+            padding: 8px 16px;
+            background: var(--color-bg);
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: var(--transition);
+        }
+        .music-file-label:hover {
+            border-color: var(--color-primary);
+            background: var(--color-primary-light);
+        }
+        .music-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .music-btn-play {
+            background: var(--color-success);
+            color: white;
+        }
+        .music-btn-pause {
+            background: var(--color-warning);
+            color: #000;
+        }
+        .music-btn-stop {
+            background: var(--color-danger);
+            color: white;
+        }
+        .music-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        .music-info {
+            font-size: 0.85em;
+            color: var(--color-text-light);
+            margin-top: 10px;
+        }
+        .music-info span {
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        
+        .history-card {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 2px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .history-card h3 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .clear-history-btn {
+            padding: 6px 12px;
+            background: var(--color-danger);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .clear-history-btn:hover {
+            background: #e74c3c;
+        }
+        
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--color-bg);
+            border-radius: var(--radius-md);
+            border-left: 4px solid var(--color-primary);
+        }
+        
+        .history-item.completed {
+            border-left-color: var(--color-success);
+        }
+        
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .history-date {
+            font-size: 0.85em;
+            color: var(--color-text-light);
+        }
+        
+        .history-duration {
+            font-weight: 700;
+            color: var(--color-text);
+        }
+        
+        .history-mode {
+            font-size: 0.85em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--color-primary-light);
+            color: var(--color-text);
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-alt) 100%);
+            padding: 15px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 2px solid var(--color-border);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--color-text-light);
+            margin-top: 4px;
+        }
+        
+        .empty-state {
+            color: var(--color-text-light);
+            background: var(--color-primary-light);
+            border: 2px dashed var(--color-border);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        
+        @media (max-width: 1024px) {
+            .app-layout { flex-direction: column; }
+            .nav-frame { width: 100%; height: auto; position: relative; }
+            .content-area { margin-left: 0; }
+            .timer-display { font-size: 3.5em; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <nav class="nav-frame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
+            <div class="nav-section"><div class="nav-title">MAIN</div><a href="index.html" class="nav-item">🏠 Home</a><a href="day.html" class="nav-item">📆 Day Planner</a></div>
+            <div class="nav-section"><div class="nav-title">PLANNING</div><a href="week.html" class="nav-item">📋 Week Planner</a><a href="month.html" class="nav-item">🗓️ Month Calendar</a><a href="year.html" class="nav-item">🎯 Year Goals</a></div>
+            <div class="nav-section"><div class="nav-title">TRACKERS</div><a href="habits.html" class="nav-item">🔥 Habit Tracker</a><a href="finance.html" class="nav-item">💰 Finance Tracker</a><a href="media.html" class="nav-item">📚🎬 Books & Movies</a><a href="study.html" class="nav-item">📚 Study Tasks</a><a href="pomodoro.html" class="nav-item active">🍅 Pomodoro Timer</a></div>
+        </nav>
+
+        <div class="content-area">
+            <div class="pomodoro-container">
+                <div class="timer-card">
+                    <h2>🍅 Pomodoro Timer</h2>
+                    
+                    <div class="mode-selector">
+                        <button class="mode-btn active" onclick="setMode('pomodoro')">🍅 Pomodoro</button>
+                        <button class="mode-btn" onclick="setMode('shortBreak')">☕ Short Break</button>
+                        <button class="mode-btn" onclick="setMode('longBreak')">🌟 Long Break</button>
+                    </div>
+                    
+                    <div class="timer-display" id="timerDisplay">25:00</div>
+                    
+                    <div class="timer-controls">
+                        <button class="timer-btn btn-start" id="startBtn" onclick="startTimer()">
+                            <span>▶</span>
+                            <span>Start</span>
+                        </button>
+                        <button class="timer-btn btn-pause" id="pauseBtn" onclick="pauseTimer()" style="display:none;">
+                            <span>⏸</span>
+                            <span>Pause</span>
+                        </button>
+                        <button class="timer-btn btn-reset" onclick="resetTimer()">
+                            <span>🔄</span>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                    
+                    <div style="color:var(--color-text-light);font-size:0.9em;">
+                        <span id="currentMode">Pomodoro</span> session
+                        <span id="sessionCounter" style="margin-left:10px;font-weight:600;color:var(--color-primary);"></span>
+                    </div>
+                    
+                    <!-- ✅ MUSIC SECTION -->
+                    <div class="music-section">
+                        <h4>🎵 Background Music</h4>
+                        <div class="music-controls">
+                            <label class="music-file-label" for="musicFile">📁 Upload Music</label>
+                            <input type="file" id="musicFile" class="music-file-input" accept="audio/*" onchange="loadMusic(this)">
+                            <button class="music-btn music-btn-play" id="musicPlayBtn" onclick="toggleMusic()" style="display:none;">
+                                <span>▶</span>
+                                <span>Play</span>
+                            </button>
+                            <button class="music-btn music-btn-pause" id="musicPauseBtn" onclick="toggleMusic()" style="display:none;">
+                                <span>⏸</span>
+                                <span>Pause</span>
+                            </button>
+                            <button class="music-btn music-btn-stop" onclick="stopMusic()">
+                                <span>⏹</span>
+                                <span>Stop</span>
+                            </button>
+                        </div>
+                        <div class="music-info" id="musicInfo" style="display:none;">
+                            Playing: <span id="musicFileName">-</span> 🔁 Repeat
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>⚙️ Timer Settings</h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label>Pomodoro Duration (minutes)</label>
+                            <input type="number" id="pomodoroDuration" value="25" min="1" max="60" onchange="updateSettings()">
+                        </div>
+                        <div class="setting-item">
+                            <label>Short Break (minutes)</label>
+                            <input type="number" id="shortBreakDuration" value="5" min="1" max="30" onchange="updateSettings()">
+                        </div>
+                        <div class="setting-item">
+                            <label>Long Break (minutes)</label>
+                            <input type="number" id="longBreakDuration" value="15" min="1" max="60" onchange="updateSettings()">
+                        </div>
+                        <div class="setting-item">
+                            <label>Pomodoros until Long Break</label>
+                            <input type="number" id="pomodorosUntilLong" value="4" min="1" max="10" onchange="updateSettings()">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="history-card">
+                    <h3>
+                        <span>📊 Completed Pomodoros</span>
+                        <button class="clear-history-btn" onclick="clearHistory()">🗑️ Clear</button>
+                    </h3>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalSessions">0</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalMinutes">0</div>
+                            <div class="stat-label">Minutes Focused</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="todaySessions">0</div>
+                            <div class="stat-label">Today</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-list" id="historyList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timerInterval = null;
+        let timeRemaining = 25 * 60;
+        let isRunning = false;
+        let currentMode = 'pomodoro';
+        let pomodoroCount = 0;
+        
+        // ✅ ИСТОРИЯ ТОЛЬКО ДЛЯ РАБОЧИХ СЕССИЙ
+        let pomodoroHistory = JSON.parse(localStorage.getItem('pomodoroHistory')) || [];
+        
+        let settings = JSON.parse(localStorage.getItem('pomodoroSettings')) || {
+            pomodoroDuration: 25,
+            shortBreakDuration: 5,
+            longBreakDuration: 15,
+            pomodorosUntilLong: 4
+        };
+        
+        // ✅ MUSIC VARIABLES
+        let audioElement = null;
+        let musicFileName = '';
+        let isMusicPlaying = false;
+        
+        let firebaseReady = false;
+        let db = null;
+        let currentUser = null;
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I",
+            authDomain: "lifedashbord.firebaseapp.com",
+            projectId: "lifedashbord",
+            storageBucket: "lifedashbord.appspot.com",
+            messagingSenderId: "206574362724",
+            appId: "1:206574362724:web:83887cae4dc87b41137f71"
+        };
+        
+        const modeLabels = {
+            pomodoro: '🍅 Pomodoro',
+            shortBreak: '☕ Short Break',
+            longBreak: '🌟 Long Break'
+        };
+        
+        const modeColors = {
+            pomodoro: 'var(--color-primary)',
+            shortBreak: 'var(--color-secondary)',
+            longBreak: 'var(--color-success)'
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initFirebase();
+            loadSettings();
+            updateTimerDisplay();
+            renderHistory();
+            updateStats();
+            updateSessionCounter();
+        });
+        
+        function initFirebase() {
+            try {
+                if (typeof firebase === 'undefined') { return; }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                var auth = firebase.auth();
+                auth.onAuthStateChanged(function(user) {
+                    if (user) { 
+                        currentUser = user; 
+                        firebaseReady = true; 
+                        loadPomodoroHistory(); // ✅ Загружаем историю из Firebase
+                    } else { 
+                        firebaseReady = false; 
+                    }
+                });
+            } catch (e) { firebaseReady = false; }
+        }
+        
+        // ✅ ЗАГРУЗКА ИСТОРИИ ИЗ FIREBASE
+        function loadPomodoroHistory() {
+            if (!currentUser || !db) return;
+            db.collection('users').doc(currentUser.uid).collection('pomodoro').doc('history').get().then(function(doc) {
+                if (doc.exists) {
+                    const loaded = doc.data();
+                    if (loaded.sessions && JSON.stringify(pomodoroHistory) !== JSON.stringify(loaded.sessions)) {
+                        pomodoroHistory = loaded.sessions;
+                        localStorage.setItem('pomodoroHistory', JSON.stringify(pomodoroHistory));
+                        renderHistory();
+                        updateStats();
+                    }
+                }
+            });
+        }
+        
+        // ✅ СОХРАНЕНИЕ ИСТОРИИ В FIREBASE
+        function savePomodoroHistory() {
+            localStorage.setItem('pomodoroHistory', JSON.stringify(pomodoroHistory));
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('pomodoro').doc('history')
+                    .set({ sessions: pomodoroHistory }).catch(function() {});
+            }
+        }
+        
+        function loadSettings() {
+            document.getElementById('pomodoroDuration').value = settings.pomodoroDuration;
+            document.getElementById('shortBreakDuration').value = settings.shortBreakDuration;
+            document.getElementById('longBreakDuration').value = settings.longBreakDuration;
+            document.getElementById('pomodorosUntilLong').value = settings.pomodorosUntilLong;
+            timeRemaining = settings.pomodoroDuration * 60;
+        }
+        
+        function updateSettings() {
+            settings.pomodoroDuration = parseInt(document.getElementById('pomodoroDuration').value) || 25;
+            settings.shortBreakDuration = parseInt(document.getElementById('shortBreakDuration').value) || 5;
+            settings.longBreakDuration = parseInt(document.getElementById('longBreakDuration').value) || 15;
+            settings.pomodorosUntilLong = parseInt(document.getElementById('pomodorosUntilLong').value) || 4;
+            localStorage.setItem('pomodoroSettings', JSON.stringify(settings));
+            resetTimer();
+        }
+        
+        function setMode(mode, autoSwitch = false) {
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event?.target?.classList?.add('active') || 
+                document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`)?.classList?.add('active');
+            
+            const duration = settings[mode + 'Duration'] || 
+                (mode === 'pomodoro' ? 25 : mode === 'shortBreak' ? 5 : 15);
+            timeRemaining = duration * 60;
+            
+            document.getElementById('currentMode').textContent = modeLabels[mode];
+            document.getElementById('currentMode').style.color = modeColors[mode];
+            updateTimerDisplay();
+            updateSessionCounter();
+            
+            if (autoSwitch) {
+                pauseTimer();
+                setTimeout(() => {
+                    startTimer();
+                }, 100);
+            } else {
+                pauseTimer();
+            }
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            document.getElementById('timerDisplay').textContent = 
+                String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            
+            document.getElementById('timerDisplay').style.color = modeColors[currentMode];
+            document.title = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} - ${modeLabels[currentMode]}`;
+        }
+        
+        function updateSessionCounter() {
+            const counter = document.getElementById('sessionCounter');
+            if (currentMode === 'pomodoro') {
+                counter.textContent = `#${pomodoroCount + 1}`;
+            } else {
+                counter.textContent = `After ${pomodoroCount}/🎯${settings.pomodorosUntilLong}`;
+            }
+        }
+        
+        function startTimer() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'flex';
+            
+            // ✅ ЗАПУСКАЕМ МУЗЫКУ ЕСЛИ ОНА ЗАГРУЖЕНА
+            if (audioElement && !isMusicPlaying) {
+                audioElement.loop = true;
+                audioElement.play().catch(() => {});
+                isMusicPlaying = true;
+                updateMusicButtons();
+            }
+            
+            timerInterval = setInterval(function() {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                } else {
+                    completeSession();
+                }
+            }, 1000);
+        }
+        
+        function pauseTimer() {
+            if (!isRunning) return;
+            
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('startBtn').style.display = 'flex';
+            document.getElementById('pauseBtn').style.display = 'none';
+        }
+        
+        function resetTimer() {
+            pauseTimer();
+            const duration = settings[currentMode + 'Duration'] || 
+                (currentMode === 'pomodoro' ? 25 : currentMode === 'shortBreak' ? 5 : 15);
+            timeRemaining = duration * 60;
+            updateTimerDisplay();
+            document.title = 'LifeDashboard | Pomodoro Timer';
+        }
+        
+        // ✅ ИСПРАВЛЕНО: АВТО-ПЕРЕКЛЮЧЕНИЕ + ИСТОРИЯ СИНХРОНИЗИРУЕТСЯ
+        function completeSession() {
+            pauseTimer();
+            
+            // 🎵 Звук уведомления
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbqWEyMmih0NupYTIyaKHQ26lhMjJoodDbqWEyMmih0NupYTIy');
+                audio.play().catch(() => {});
+            } catch (e) {}
+            
+            // ✅ ЗАПИСЫВАЕМ В ИСТОРИЮ ТОЛЬКО РАБОЧИЕ СЕССИИ
+            if (currentMode === 'pomodoro') {
+                const session = {
+                    id: 'session_' + Date.now(),
+                    mode: 'pomodoro',
+                    duration: settings.pomodoroDuration,
+                    completedAt: new Date().toISOString(),
+                    date: new Date().toLocaleDateString('en-US', { 
+                        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    })
+                };
+                
+                pomodoroHistory.unshift(session);
+                
+                if (pomodoroHistory.length > 100) {
+                    pomodoroHistory = pomodoroHistory.slice(0, 100);
+                }
+                
+                // ✅ СОХРАНЯЕМ В FIREBASE
+                savePomodoroHistory();
+                
+                pomodoroCount++;
+                
+                if (pomodoroCount % settings.pomodorosUntilLong === 0) {
+                    setTimeout(() => setMode('longBreak', true), 1500);
+                } else {
+                    setTimeout(() => setMode('shortBreak', true), 1500);
+                }
+                
+            } else {
+                setTimeout(() => {
+                    setMode('pomodoro', true);
+                    if (currentMode === 'longBreak') {
+                        pomodoroCount = 0;
+                    }
+                }, 1500);
+            }
+            
+            renderHistory();
+            updateStats();
+            updateSessionCounter();
+        }
+        
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            
+            if (pomodoroHistory.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No completed Pomodoros yet. Start your first session!</p></div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            pomodoroHistory.slice(0, 20).forEach(session => {
+                const item = document.createElement('div');
+                item.className = 'history-item completed';
+                item.innerHTML = `
+                    <div class="history-info">
+                        <div class="history-duration">${session.duration} min 🍅 Pomodoro</div>
+                        <div class="history-date">${session.date}</div>
+                    </div>
+                    <div class="history-mode">✅ Completed</div>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function updateStats() {
+            const today = new Date().toLocaleDateString('en-US');
+            
+            const totalSessions = pomodoroHistory.length;
+            const totalMinutes = pomodoroHistory
+                .filter(s => s.mode === 'pomodoro')
+                .reduce((sum, s) => sum + (s.duration || 0), 0);
+            const todaySessions = pomodoroHistory.filter(s => {
+                const sessionDate = new Date(s.completedAt).toLocaleDateString('en-US');
+                return sessionDate === today && s.mode === 'pomodoro';
+            }).length;
+            
+            document.getElementById('totalSessions').textContent = totalSessions;
+            document.getElementById('totalMinutes').textContent = totalMinutes;
+            document.getElementById('todaySessions').textContent = todaySessions;
+        }
+        
+        window.clearHistory = function() {
+            if (!confirm('Clear all completed Pomodoro history?')) return;
+            
+            pomodoroHistory = [];
+            localStorage.setItem('pomodoroHistory', JSON.stringify(pomodoroHistory));
+            
+            if (firebaseReady && currentUser && db) {
+                db.collection('users').doc(currentUser.uid).collection('pomodoro').doc('history')
+                    .set({ sessions: [] }).catch(() => {});
+            }
+            
+            renderHistory();
+            updateStats();
+        };
+        
+        // ✅ MUSIC FUNCTIONS
+        window.loadMusic = function(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            musicFileName = file.name;
+            
+            if (audioElement) {
+                audioElement.pause();
+                URL.revokeObjectURL(audioElement.src);
+            }
+            
+            audioElement = new Audio(URL.createObjectURL(file));
+            audioElement.loop = true; // ✅ ПОВТОР ВСЕГДА ВКЛЮЧЕН
+            
+            document.getElementById('musicFileName').textContent = musicFileName.length > 20 ? 
+                musicFileName.substring(0, 20) + '...' : musicFileName;
+            document.getElementById('musicInfo').style.display = 'block';
+            document.getElementById('musicPlayBtn').style.display = 'flex';
+            
+            updateMusicButtons();
+        };
+        
+        window.toggleMusic = function() {
+            if (!audioElement) return;
+            
+            if (isMusicPlaying) {
+                audioElement.pause();
+                isMusicPlaying = false;
+            } else {
+                audioElement.play().catch(() => {});
+                isMusicPlaying = true;
+            }
+            updateMusicButtons();
+        };
+        
+        window.stopMusic = function() {
+            if (!audioElement) return;
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            isMusicPlaying = false;
+            updateMusicButtons();
+        };
+        
+        function updateMusicButtons() {
+            const playBtn = document.getElementById('musicPlayBtn');
+            const pauseBtn = document.getElementById('musicPauseBtn');
+            
+            if (isMusicPlaying) {
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+            } else {
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
