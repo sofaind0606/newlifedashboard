@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    LifeDashboard - Unified Stylesheet
    Color Palette:
    #E59B90 — мягкий розовый (акценты, кнопки, активные ссылки)
@@ -904,3 +904,428 @@ body {
         border-color: var(--color-primary);
         transform: translateY(-2px);
     }
+/* ============================================
+   ✅ МОБИЛЬНАЯ АДАПТИВНОСТЬ (Mobile Responsive)
+   ============================================ */
+
+/* 📱 Общие стили для мобильных устройств */
+@media (max-width: 1024px) {
+    .app-layout {
+        flex-direction: column;
+    }
+    
+    .nav-frame {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 2px solid var(--color-primary);
+        padding: 12px 16px;
+    }
+    
+    .nav-section {
+        flex-direction: row;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    
+    .nav-title {
+        display: none; /* Скрываем заголовки секций на мобильном */
+    }
+    
+    .nav-item {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+    
+    .content-area {
+        margin-left: 0;
+        padding: 16px;
+    }
+    
+    .main-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .main-left, .main-right {
+        width: 100%;
+    }
+    
+    .card {
+        padding: 16px;
+    }
+    
+    .card h2 {
+        font-size: 1.2em;
+    }
+}
+
+/* 📱 Смартфоны (меньше 768px) */
+@media (max-width: 768px) {
+    /* Навигация */
+    .nav-frame {
+        flex-wrap: wrap;
+    }
+    
+    .logo {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 12px;
+    }
+    
+    .nav-section {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .nav-item {
+        font-size: 0.8em;
+        padding: 6px 10px;
+    }
+    
+    /* Контент */
+    .content-area {
+        padding: 12px;
+    }
+    
+    .user-header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .user-info {
+        flex-direction: column;
+    }
+    
+    /* Сетка карточек */
+    .subjects-grid,
+    .savings-grid,
+    .credits-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .stat-mini {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Таблицы */
+    .habit-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .habit-table {
+        min-width: 600px; /* Чтобы таблица скроллилась горизонтально */
+    }
+    
+    .habit-table th,
+    .habit-table td {
+        padding: 8px 5px;
+        font-size: 0.75em;
+    }
+    
+    /* Кнопки */
+    .add-subject-btn,
+    .add-transaction-btn,
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+    
+    .study-tabs,
+    .status-filter {
+        flex-wrap: wrap;
+    }
+    
+    .study-tab-btn,
+    .status-filter-btn {
+        flex: 1 1 auto;
+        text-align: center;
+        font-size: 0.8em;
+        padding: 8px 12px;
+    }
+    
+    /* Формы */
+    .form-row,
+    .form-row-3,
+    .pending-add-grid,
+    .task-modal-grid,
+    .settings-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .habit-input-group {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .habit-input-group input[type="text"],
+    .habit-input-group select,
+    .habit-input-group .add-btn {
+        width: 100%;
+    }
+    
+    /* Карточки задач */
+    .task-item,
+    .pending-task-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .task-actions,
+    .pending-task-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    /* Календарь */
+    .mini-calendar-grid {
+        gap: 3px;
+    }
+    
+    .mini-calendar-day {
+        padding: 6px;
+        font-size: 0.8em;
+    }
+    
+    .date-range-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-range-selector input[type="date"] {
+        width: 100%;
+    }
+    
+    /* Помодоро */
+    .timer-display {
+        font-size: 3.5em !important;
+    }
+    
+    .timer-controls {
+        flex-direction: column;
+    }
+    
+    .timer-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .mode-selector {
+        flex-direction: column;
+    }
+    
+    .mode-btn {
+        width: 100%;
+    }
+    
+    /* Мотивационная доска */
+    .motivation-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .motivation-img-card {
+        aspect-ratio: 1;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        padding: 20px;
+        max-height: 90vh;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.1em;
+    }
+    
+    /* FAB кнопка */
+    .fab-add-task {
+        bottom: 16px;
+        right: 16px;
+        width: 56px;
+        height: 56px;
+        font-size: 1.8em;
+    }
+    
+    /* Финансы */
+    .budget-summary {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .budget-bar {
+        width: 100%;
+    }
+    
+    .transaction-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .transaction-actions {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    /* Цитаты */
+    .reminder-quote-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    /* Хобби */
+    .hobby-buttons {
+        flex-direction: column;
+    }
+    
+    .hobby-btn {
+        width: 100%;
+    }
+    
+    /* Стикеры для выбора */
+    .sticker-buttons {
+        justify-content: center;
+    }
+    
+    .sticker-btn {
+        padding: 6px 10px;
+        font-size: 1.1em;
+    }
+    
+    /* Музыка в помодоро */
+    .music-controls {
+        flex-direction: column;
+    }
+    
+    .music-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* 📱 Очень маленькие экраны (меньше 480px) */
+@media (max-width: 480px) {
+    .logo h1 {
+        font-size: 1rem;
+    }
+    
+    .logo p {
+        font-size: 0.65rem;
+    }
+    
+    .nav-item {
+        font-size: 0.75em;
+        padding: 5px 8px;
+    }
+    
+    .timer-display {
+        font-size: 2.5em !important;
+    }
+    
+    .stat-value {
+        font-size: 1.5em;
+    }
+    
+    .motivation-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    
+    .habit-table {
+        min-width: 500px;
+    }
+    
+    .card {
+        padding: 12px;
+    }
+    
+    .save-btn,
+    .add-category-btn {
+        font-size: 0.9em;
+        padding: 12px;
+    }
+}
+
+/* ============================================
+   ✅ TOUCH-FRIENDLY ЭЛЕМЕНТЫ (для пальцев)
+   ============================================ */
+
+/* Увеличиваем размер кликабельных областей */
+@media (max-width: 768px) {
+    button,
+    .nav-item,
+    .task-btn,
+    .category-btn,
+    .sticker-btn,
+    .mode-btn,
+    .study-tab-btn,
+    .status-filter-btn {
+        min-height: 44px; /* Минимальный размер для пальца */
+    }
+    
+    input[type="checkbox"],
+    input[type="radio"] {
+        width: 20px;
+        height: 20px;
+    }
+    
+    input[type="date"],
+    input[type="time"],
+    input[type="number"],
+    select,
+    textarea {
+        font-size: 16px; /* Чтобы не зумилось на iPhone */
+        padding: 12px;
+    }
+}
+
+/* ============================================
+   ✅ СКРЫТИЕ ЭЛЕМЕНТОВ НА МОБИЛЬНОМ
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Скрываем менее важные элементы на мобильном */
+    .nav-title,
+    .logo p,
+    .stat-label,
+    .history-mode,
+    .task-category,
+    .badge-difficulty {
+        display: none;
+    }
+}
+
+/* ============================================
+   ✅ УЛУЧШЕНИЯ ДЛЯ ПЛАНШЕТОВ (768px - 1024px)
+   ============================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .subjects-grid,
+    .savings-grid,
+    .credits-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .motivation-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
