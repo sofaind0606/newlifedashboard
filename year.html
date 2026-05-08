@@ -1,128 +1,77 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>LifeDashboard | Year Goals</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LifeDashboard | Годовые цели</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ========== КРЕМОВО-ГОЛУБАЯ ГАММА ========== */
         :root {
-            --color-primary: #E59B90;
-            --color-primary-dark: #c97b6f;
-            --color-primary-light: #f7c7bf;
-            --color-secondary: #A4A884;
-            --color-secondary-dark: #8a8e6c;
-            --color-secondary-light: #d0d4b6;
-            --color-accent: #620607;
-            --color-text: #620607;
-            --color-text-light: #8a3a3c;
-            --color-text-muted: #b57a7c;
-            --color-nav: #E59B90;
-            --color-nav-light: #D18B80;
-            --color-border: #A4A884;
-            --color-border-light: #d0d4b6;
-            --color-bg: #F9FBED;
-            --color-bg-alt: #ffffff;
-            --color-bg-card: #ffffff;
-            --shadow-sm: 0 2px 8px rgba(98, 6, 7, 0.05);
-            --shadow-md: 0 4px 15px rgba(98, 6, 7, 0.08);
-            --shadow-lg: 0 10px 30px rgba(98, 6, 7, 0.12);
+            --color-primary: #93ABDB;
+            --color-primary-dark: #768FC2;
+            --color-primary-light: #C2D4F5;
+            --color-secondary: #FAF4CD;
+            --color-secondary-dark: #E6DFB3;
+            --color-secondary-light: #FFF9E6;
+            --color-accent: #5B6F9E;
+            --color-text: #3D4A66;
+            --color-text-light: #6B7C9E;
+            --color-text-muted: #A5B3CC;
+            --color-nav: #93ABDB;
+            --color-nav-light: #A6BCE8;
+            --color-border: #FAF4CD;
+            --color-border-light: #FFF4E0;
+            --color-bg: #FDFBF0;
+            --color-bg-alt: #FFFFFF;
+            --color-bg-card: #FFFFFF;
+            --shadow-sm: 0 2px 8px rgba(91, 111, 158, 0.05);
+            --shadow-md: 0 4px 15px rgba(91, 111, 158, 0.08);
+            --shadow-lg: 0 10px 30px rgba(91, 111, 158, 0.12);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --radius-xl: 20px;
-            --transition: all 0.2s ease;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--color-bg); min-height: 100vh; color: var(--color-text); }
-        
-        .app-layout { display: flex; min-height: 100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--color-bg); min-height: 100vh; color: var(--color-text); line-height: 1.5; }
+
+        /* ========== НАВИГАЦИЯ (десктоп + бургер) ========== */
+        .app-layout { display: flex; min-height: 100vh; position: relative; }
+        .burger-btn { display: none; position: fixed; top: 16px; left: 16px; z-index: 1001; width: 44px; height: 44px; background: var(--color-primary); border: none; border-radius: 50%; color: white; font-size: 1.6rem; cursor: pointer; box-shadow: var(--shadow-md); align-items: center; justify-content: center; }
         .nav-frame {
-            width: 18%;
-            min-width: 200px;
-            background: #E59B90;
-            padding: 24px 16px;
-            border-right: 2px solid var(--color-primary);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-            font-size: 1.1rem;
-            box-shadow: 4px 0 20px rgba(198, 61, 77, 0.15);
+            width: 18%; min-width: 220px; background: var(--color-primary); padding: 24px 16px; border-right: 2px solid var(--color-primary-dark);
+            position: fixed; height: 100vh; overflow-y: auto; z-index: 100; box-shadow: 4px 0 20px rgba(62, 92, 102, 0.15);
+            transition: transform 0.3s ease;
         }
-        .logo {
-            margin-bottom: 16px;
-            padding: 12px;
-            border-bottom: 2px solid #ffffff;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-        }
-        .logo h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; line-height: 1.2; margin: 0; }
-        .logo p { color: var(--color-bg); font-size: 0.75rem; margin-top: 2px; opacity: 0.9; line-height: 1.3; }
+        .logo { margin-bottom: 16px; padding: 12px; border-bottom: 2px solid #ffffff; text-align: center; background: rgba(255, 255, 255, 0.1); border-radius: 12px; }
+        .logo h1 { color: #ffffff; font-size: 1.2rem; font-weight: 700; }
+        .logo p { color: var(--color-bg); font-size: 0.75rem; opacity: 0.9; }
         .nav-section { margin-bottom: 20px; }
-        .nav-title {
-            font-size: 0.85em;
-            font-weight: 700;
-            color: var(--color-primary-light);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 8px;
-            padding-left: 8px;
-        }
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 14px;
-            color: whitesmoke;
-            text-decoration: none;
-            border-radius: var(--radius-md);
-            margin-bottom: 4px;
-            transition: var(--transition);
-            font-weight: 600;
-            border: 1px solid transparent;
-            font-size: 1.1rem;
-            line-height: 1.5;
-        }
-        .nav-item:hover {
-            background: var(--color-primary);
-            color: #BA494B;
-            transform: translateX(4px);
-            box-shadow: var(--shadow-sm);
-        }
-        .nav-item.active {
-            background: #BA494B;
-            color: whitesmoke;
-            font-weight: 700;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .content-area {
-            flex: 1;
-            margin-left: 18%;
-            padding: 24px 32px;
-            display: flex;
-            justify-content: center;
-        }
-        
+        .nav-title { color: rgba(255,255,255,0.7); font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; padding-left: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; color: whitesmoke; text-decoration: none; border-radius: var(--radius-md); margin-bottom: 4px; transition: var(--transition); font-weight: 600; }
+        .nav-item:hover { background: var(--color-primary-dark); transform: translateX(4px); }
+        .nav-item.active { background: var(--color-accent); font-weight: 700; }
+        .content-area { flex: 1; margin-left: 18%; padding: 24px 32px; max-width: 1600px; width: 100%; display: flex; justify-content: center; }
+
         .card {
             background: var(--color-bg-card);
             border-radius: var(--radius-lg);
             padding: 30px;
-            margin-bottom: 24px;
             box-shadow: var(--shadow-sm);
             border: 2px solid var(--color-border);
             width: 100%;
             max-width: 1100px;
+            transition: var(--transition);
         }
+        .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         .card h2 {
-            color: var(--color-nav);
+            color: var(--color-primary-dark);
             font-weight: 700;
             font-size: 1.6em;
             margin: 0 0 24px 0;
@@ -130,9 +79,9 @@
             border-bottom: 2px solid var(--color-border);
             text-align: center;
         }
-        
+
+        /* Колесо баланса */
         .wheel-section { margin-bottom: 40px; }
-        
         .categories-strip {
             display: flex;
             flex-wrap: wrap;
@@ -207,7 +156,8 @@
             display: inline-block;
             border: 1px solid var(--color-border-light);
         }
-        
+
+        /* Форма добавления категории */
         .add-category-form {
             display: flex;
             gap: 12px;
@@ -229,7 +179,7 @@
         }
         .add-category-btn {
             padding: 12px 24px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-nav));
             color: white;
             border: none;
             border-radius: var(--radius-md);
@@ -238,7 +188,8 @@
             transition: var(--transition);
         }
         .add-category-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        
+
+        /* Список категорий с целями */
         .categories-list { display: flex; flex-direction: column; gap: 20px; }
         .category-card {
             background: white;
@@ -260,7 +211,6 @@
         }
         .category-header:hover { background: var(--color-bg); }
         .category-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-        /* ✅ УБРАНА ИКОНКА - ТОЛЬКО НАЗВАНИЕ */
         .category-name { font-weight: 700; color: var(--color-text); font-size: 1.1em; }
         .category-actions { display: flex; gap: 8px; }
         .category-btn {
@@ -278,7 +228,7 @@
         .delete-category-btn:hover { background: var(--color-primary); color: white; }
         .toggle-tasks-btn { background: rgba(52, 152, 219, 0.15); color: #3498db; }
         .toggle-tasks-btn:hover { background: #3498db; color: white; }
-        
+
         .category-tasks { padding: 20px; background: var(--color-bg); display: none; }
         .category-tasks.expanded { display: block; }
         .add-task-form { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
@@ -342,12 +292,13 @@
             text-align: center;
             font-weight: 500;
         }
-        
+
+        /* Модальные окна */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(198, 61, 77, 0.5);
+            background: rgba(62, 92, 102, 0.5);
             backdrop-filter: blur(5px);
             z-index: 1000;
             justify-content: center;
@@ -396,12 +347,12 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(229, 155, 144, 0.2);
+            box-shadow: 0 0 0 3px rgba(147, 171, 219, 0.2);
         }
         .save-btn {
             width: 100%;
             padding: 14px;
-            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-nav) 100%);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-nav));
             color: white;
             border: none;
             border-radius: var(--radius-md);
@@ -411,7 +362,8 @@
             font-size: 1em;
         }
         .save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        
+
+        /* Адаптивность */
         @media (max-width: 1024px) {
             .app-layout { flex-direction: column; }
             .nav-frame { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; padding: 12px 16px; border-right: none; border-bottom: 2px solid var(--color-primary); }
@@ -421,43 +373,38 @@
             .content-area { margin-left: 0; padding: 20px; }
         }
         @media (max-width: 768px) {
+            .burger-btn { display: flex; }
+            .nav-frame { transform: translateX(-100%); width: 80%; max-width: 280px; position: fixed; top: 0; left: 0; flex-direction: column; border-bottom: none; border-right: 2px solid var(--color-primary-dark); }
+            .nav-frame.open { transform: translateX(0); }
+            .content-area { margin-left: 0; padding: 60px 16px 16px; }
+            .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 999; }
+            .overlay.active { display: block; }
             .add-category-form { flex-direction: column; }
             .add-category-form input { width: 100%; }
             .category-header { flex-wrap: wrap; gap: 10px; }
             .category-actions { width: 100%; justify-content: flex-end; }
             .wheel-box { max-width: 400px; }
         }
+        .overlay { display: none; }
     </style>
 </head>
 <body>
+    <button class="burger-btn" id="burgerBtn">☰</button>
+    <div class="overlay" id="overlay"></div>
     <div class="app-layout">
-        <nav class="nav-frame">
-            <div class="logo"><h1>📅 LifeDashboard</h1><p>Complete Productivity Suite</p></div>
-            <div class="nav-section"><div class="nav-title">MAIN</div>
-                <a href="index.html" class="nav-item">🏠 Home</a>
-                <a href="day.html" class="nav-item">📆 Day Planner</a>
-            </div>
-            <div class="nav-section"><div class="nav-title">PLANNING</div>
-                <a href="week.html" class="nav-item">📋 Week Planner</a>
-                <a href="month.html" class="nav-item">🗓️ Month Calendar</a>
-                <a href="year.html" class="nav-item active">🎯 Year Goals</a>
-            </div>
-            <div class="nav-section"><div class="nav-title">TRACKERS</div>
-                <a href="habits.html" class="nav-item">🔥 Habit Tracker</a>
-                <a href="finance.html" class="nav-item">💰 Finance Tracker</a>
-                <a href="media.html" class="nav-item">📚🎬 Books & Movies</a>
-                <a href="study.html" class="nav-item">📚 Study Tasks</a>
-                <a href="pomodoro.html" class="nav-item">🍅 Pomodoro Timer</a>
-            </div>
+        <nav class="nav-frame" id="navFrame">
+            <div class="logo"><h1>📅 LifeDashboard</h1><p>Полный набор для продуктивности</p></div>
+            <div class="nav-section"><div class="nav-title">ГЛАВНОЕ</div><a href="index.html" class="nav-item">🏠 Главная</a><a href="day.html" class="nav-item">📆 План на день</a></div>
+            <div class="nav-section"><div class="nav-title">ПЛАНИРОВАНИЕ</div><a href="week.html" class="nav-item">📋 Неделя</a><a href="month.html" class="nav-item">🗓️ Месяц</a><a href="year.html" class="nav-item active">🎯 Год</a></div>
+            <div class="nav-section"><div class="nav-title">ТРЕКЕРЫ</div><a href="habits.html" class="nav-item">🔥 Привычки</a><a href="finance.html" class="nav-item">💰 Финансы</a><a href="media.html" class="nav-item">📚🎬 Книги и фильмы</a><a href="study.html" class="nav-item">📚 Учёба</a><a href="pomodoro.html" class="nav-item">🍅 Таймер помодоро</a></div>
         </nav>
-
         <div class="content-area">
             <div class="card">
-                <h2>🎯 Year Goals</h2>
+                <h2>🎯 Годовые цели</h2>
                 
                 <div class="wheel-section">
                     <div class="categories-strip empty" id="categoriesStrip">
-                        <p>No categories yet. Add your first category below!</p>
+                        <p>Пока нет категорий. Добавьте первую категорию ниже!</p>
                     </div>
                     
                     <div class="wheel-wrapper">
@@ -466,15 +413,15 @@
                         </div>
                     </div>
                     
-                    <div class="balance-footer" id="averageDisplay">⭐ Average Level: --</div>
-                    <div class="instruction">💡 Click on a sector to set level (1–10)</div>
+                    <div class="balance-footer" id="averageDisplay">⭐ Средний уровень: --</div>
+                    <div class="instruction">💡 Нажмите на сектор, чтобы выставить уровень (1–10)</div>
                 </div>
                 
-                <h3 style="color:var(--color-text);margin:30px 0 20px 0; text-align:center;">📋 Your Categories & Goals</h3>
+                <h3 style="color:var(--color-text); margin:30px 0 20px 0; text-align:center;">📋 Ваши категории и цели</h3>
                 
                 <div class="add-category-form">
-                    <input type="text" id="newCategoryName" placeholder="Category name (e.g., Health, Career, Fitness)">
-                    <button class="add-category-btn" onclick="addCategory()">➕ Add Category</button>
+                    <input type="text" id="newCategoryName" placeholder="Название категории (например: Здоровье, Карьера, Путешествия)">
+                    <button class="add-category-btn" onclick="addCategory()">➕ Добавить категорию</button>
                 </div>
                 
                 <div class="categories-list" id="categoriesList"></div>
@@ -482,104 +429,108 @@
         </div>
     </div>
 
-    <!-- Category Edit Modal -->
+    <!-- Модальное окно для редактирования категории -->
     <div id="categoryModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="categoryModalTitle">✏️ Edit Category</h3>
+                <h3 id="categoryModalTitle">✏️ Редактировать категорию</h3>
                 <button class="close-modal" onclick="closeCategoryModal()">✖</button>
             </div>
             <div class="form-group">
-                <label>Category Name</label>
+                <label>Название категории</label>
                 <input type="text" id="editCategoryName">
             </div>
-            <button class="save-btn" onclick="saveEditedCategory()">💾 Save</button>
+            <button class="save-btn" onclick="saveEditedCategory()">💾 Сохранить</button>
         </div>
     </div>
 
-    <!-- Task Edit Modal -->
+    <!-- Модальное окно для редактирования цели/задачи -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="taskModalTitle">✏️ Edit Goal/Task</h3>
+                <h3 id="taskModalTitle">✏️ Редактировать цель</h3>
                 <button class="close-modal" onclick="closeTaskModal()">✖</button>
             </div>
             <div class="form-group">
-                <label>Goal/Task</label>
+                <label>Текст цели</label>
                 <input type="text" id="editTaskText">
             </div>
-            <button class="save-btn" onclick="saveEditedTask()">💾 Save</button>
+            <button class="save-btn" onclick="saveEditedTask()">💾 Сохранить</button>
         </div>
     </div>
 
     <script>
-        // ✅ ЦВЕТА ДЛЯ КАТЕГОРИЙ (рандомно назначаются)
+        // ========== ЦВЕТА ДЛЯ КАТЕГОРИЙ (палитра, сочетающаяся с гаммой) ==========
         const CATEGORY_COLORS = [
-            "#E59B90", "#A4A884", "#620607", "#8a8e6c", "#d0d4b6",
-            "#c97b6f", "#f7c7bf", "#b57a7c", "#8a3a3c", "#9dad71"
+            "#93ABDB", "#A6BCE8", "#C2D4F5", "#7F9BCB", "#8AACBE",
+            "#FAF4CD", "#FFF4E0", "#FDFDC9", "#FEF8E0", "#E8DFB0",
+            "#5B6F9E", "#768FC2", "#4A5D82", "#3D4A66", "#6B7C9E"
         ];
-        
-        let yearData = JSON.parse(localStorage.getItem('yearData')) || {
-            categories: []
-        };
-        
+
+        let yearData = JSON.parse(localStorage.getItem('yearData')) || { categories: [] };
         let selectedBalanceCategory = -1;
         let firebaseReady = false;
         let db = null;
         let currentUser = null;
         let currentEditCategory = null;
         let currentEditTask = null;
-        
-        const firebaseConfig = { 
-            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I", 
-            authDomain: "lifedashbord.firebaseapp.com", 
-            projectId: "lifedashbord", 
-            storageBucket: "lifedashbord.appspot.com", 
-            messagingSenderId: "206574362724", 
-            appId: "1:206574362724:web:83887cae4dc87b41137f71" 
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyARKWwV3cggOhda9g6cDNcEAGOpUN4O63I",
+            authDomain: "lifedashbord.firebaseapp.com",
+            projectId: "lifedashbord",
+            storageBucket: "lifedashbord.appspot.com",
+            messagingSenderId: "206574362724",
+            appId: "1:206574362724:web:83887cae4dc87b41137f71"
         };
-        
+
         let canvas, ctx, wheelBox;
         let width = 650, height = 650;
         let centerX, centerY, outerRadius, innerRadius, segmentAngle, labelRadius;
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             canvas = document.getElementById('wheelCanvas');
             ctx = canvas?.getContext('2d');
             wheelBox = document.getElementById('wheelBox');
-            
+
             if (!canvas || !ctx || !wheelBox) return;
-            
+
             initFirebase();
             initWheel();
             renderBalanceWheel();
             renderCategories();
-            
+
             canvas.addEventListener('click', handleCanvasClick);
+
+            // Бургер-меню
+            const burger = document.getElementById('burgerBtn');
+            const nav = document.getElementById('navFrame');
+            const overlay = document.getElementById('overlay');
+            if (burger) burger.addEventListener('click', () => { nav.classList.toggle('open'); overlay.classList.toggle('active'); });
+            if (overlay) overlay.addEventListener('click', () => { nav.classList.remove('open'); overlay.classList.remove('active'); });
         });
-        
+
+        // ========== FIRESTORE ==========
         function initFirebase() {
-            var firebaseTimeout = setTimeout(function() { firebaseReady = false; }, 5000);
+            var timeout = setTimeout(() => { firebaseReady = false; }, 5000);
             try {
-                if (typeof firebase === 'undefined') { clearTimeout(firebaseTimeout); return; }
+                if (typeof firebase === 'undefined') { clearTimeout(timeout); return; }
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
-                var auth = firebase.auth();
-                auth.onAuthStateChanged(function(user) {
-                    clearTimeout(firebaseTimeout);
-                    if (user) { 
-                        currentUser = user; 
+                firebase.auth().onAuthStateChanged(user => {
+                    clearTimeout(timeout);
+                    if (user) {
+                        currentUser = user;
                         firebaseReady = true;
                         loadData();
-                    }
-                    else { firebaseReady = false; }
+                    } else { firebaseReady = false; }
                 });
-            } catch (e) { clearTimeout(firebaseTimeout); firebaseReady = false; }
+            } catch(e) { clearTimeout(timeout); firebaseReady = false; }
         }
-        
+
         function loadData() {
             if (!currentUser || !db) return;
-            db.collection('users').doc(currentUser.uid).collection('year').doc('data').get().then(function(doc) {
+            db.collection('users').doc(currentUser.uid).collection('year').doc('data').get().then(doc => {
                 if (doc.exists) {
                     const loaded = doc.data();
                     if (JSON.stringify(yearData) !== JSON.stringify(loaded)) {
@@ -591,22 +542,22 @@
                 }
             });
         }
-        
+
         function saveData() {
             localStorage.setItem('yearData', JSON.stringify(yearData));
             if (firebaseReady && currentUser && db) {
                 db.collection('users').doc(currentUser.uid).collection('year').doc('data').set(yearData);
             }
         }
-        
+
         function generateId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9); }
-        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { return ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]); }); }
-        
-        // ✅ РАНДОМНЫЙ ЦВЕТ
+        function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+
         function getRandomColor() {
             return CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)];
         }
-        
+
+        // ========== КОЛЕСО БАЛАНСА ==========
         function initWheel() {
             if (!wheelBox || !canvas) return;
             const rect = wheelBox.getBoundingClientRect();
@@ -618,28 +569,27 @@
             centerY = height / 2;
             outerRadius = Math.min(width, height) * 0.42;
             innerRadius = outerRadius * 0.15;
-            segmentAngle = (Math.PI * 2) / Math.max(yearData.categories.length, 1);
+            const catCount = yearData.categories.length;
+            segmentAngle = (Math.PI * 2) / Math.max(catCount, 1);
             labelRadius = outerRadius + 35;
         }
-        
+
         function renderBalanceWheel() {
             if (!ctx) return;
             initWheel();
             ctx.clearRect(0, 0, width, height);
-            
+
             const categories = yearData.categories || [];
             const N = categories.length;
-            
-            // ✅ ЕСЛИ НЕТ КАТЕГОРИЙ - ПОКАЗЫВАЕМ ПУСТОЕ КОЛЕСО
+
             if (N === 0) {
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, outerRadius, 0, Math.PI*2);
-                ctx.fillStyle = "rgba(229, 155, 144, 0.1)";
+                ctx.fillStyle = "rgba(147, 171, 219, 0.1)";
                 ctx.fill();
-                ctx.strokeStyle = "rgba(229, 155, 144, 0.3)";
+                ctx.strokeStyle = "rgba(147, 171, 219, 0.3)";
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, innerRadius, 0, Math.PI*2);
                 ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -647,29 +597,26 @@
                 ctx.strokeStyle = "#d0d4b6";
                 ctx.lineWidth = 2;
                 ctx.stroke();
-                
                 ctx.font = `500 16px "Inter"`;
-                ctx.fillStyle = "#8a3a3c";
+                ctx.fillStyle = "#6B7C9E";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText("Add categories", centerX, centerY - 10);
-                ctx.fillText("to build your wheel", centerX, centerY + 10);
+                ctx.fillText("Добавьте категории", centerX, centerY - 10);
+                ctx.fillText("чтобы построить колесо", centerX, centerY + 10);
                 
                 const strip = document.getElementById('categoriesStrip');
                 if (strip) {
                     strip.className = 'categories-strip empty';
-                    strip.innerHTML = '<p>No categories yet. Add your first category below!</p>';
+                    strip.innerHTML = '<p>Пока нет категорий. Добавьте первую категорию ниже!</p>';
                 }
-                
                 const avgSpan = document.getElementById('averageDisplay');
-                if (avgSpan) avgSpan.innerHTML = `⭐ Average Level: --`;
-                
+                if (avgSpan) avgSpan.innerHTML = `⭐ Средний уровень: --`;
                 return;
             }
-            
+
             segmentAngle = (Math.PI * 2) / N;
-            
-            // ✅ РИСУЕМ СЕТКУ УРОВНЕЙ
+
+            // Рисуем сетку уровней
             for (let i = 0; i < N; i++) {
                 const start = i * segmentAngle - Math.PI/2;
                 const end = (i+1) * segmentAngle - Math.PI/2;
@@ -681,23 +628,23 @@
                     ctx.arc(centerX, centerY, r2, start, end);
                     ctx.arc(centerX, centerY, r1, end, start, true);
                     ctx.closePath();
-                    ctx.fillStyle = "rgba(229, 155, 144, 0.4)";
+                    ctx.fillStyle = "rgba(147, 171, 219, 0.4)";
                     ctx.fill();
-                    ctx.strokeStyle = "rgba(229, 155, 144, 0.7)";
+                    ctx.strokeStyle = "rgba(147, 171, 219, 0.7)";
                     ctx.lineWidth = 2;
                     ctx.stroke();
                 }
             }
-            
-            // ✅ РИСУЕМ КАТЕГОРИИ ПОЛЬЗОВАТЕЛЯ
+
+            // Рисуем заливку категорий
             for (let i = 0; i < N; i++) {
                 const cat = categories[i];
                 const currentLevel = cat.balanceLevel || 5;
                 const start = i * segmentAngle - Math.PI/2;
                 const end = (i+1) * segmentAngle - Math.PI/2;
                 const isBright = selectedBalanceCategory === i;
-                const color = cat.color || CATEGORY_COLORS[i % CATEGORY_COLORS.length];
-                
+                const color = cat.color || getRandomColor();
+
                 for (let lvl = 1; lvl <= currentLevel; lvl++) {
                     const r1 = innerRadius + (outerRadius - innerRadius) * ((lvl - 1) / 10);
                     const r2 = innerRadius + (outerRadius - innerRadius) * (lvl / 10);
@@ -715,42 +662,42 @@
                         ctx.stroke();
                     }
                 }
-                
+
                 const numRadius = innerRadius + (outerRadius - innerRadius) * ((currentLevel - 0.5) / 10);
                 const numAngle = start + segmentAngle/2;
                 const numX = centerX + Math.cos(numAngle) * numRadius;
                 const numY = centerY + Math.sin(numAngle) * numRadius;
                 ctx.font = `700 ${Math.max(13, outerRadius * 0.05)}px "Inter"`;
-                ctx.fillStyle = currentLevel >= 5 ? "#ffffff" : "#620607";
+                ctx.fillStyle = currentLevel >= 5 ? "#ffffff" : "#3D4A66";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.shadowColor = "rgba(0,0,0,0.3)";
+                ctx.shadowColor = "rgba(0,0,0,0.2)";
                 ctx.shadowBlur = 2;
                 ctx.fillText(currentLevel, numX, numY);
                 ctx.shadowBlur = 0;
-                
+
                 drawCurvedText(cat.name, centerX, centerY, labelRadius, start + segmentAngle/2, segmentAngle * 0.7, isBright);
             }
-            
+
             ctx.beginPath();
             ctx.arc(centerX, centerY, innerRadius - 5, 0, Math.PI*2);
             ctx.fillStyle = selectedBalanceCategory >= 0 ? "rgba(255, 255, 255, 0.98)" : "rgba(255, 255, 255, 0.95)";
             ctx.fill();
-            ctx.strokeStyle = selectedBalanceCategory >= 0 ? "#E59B90" : "#d0d4b6";
+            ctx.strokeStyle = selectedBalanceCategory >= 0 ? "#93ABDB" : "#d0d4b6";
             ctx.lineWidth = selectedBalanceCategory >= 0 ? 3 : 2;
             ctx.stroke();
-            
+
             const avg = categories.reduce((sum, c) => sum + (c.balanceLevel || 5), 0) / N;
             ctx.font = `700 ${innerRadius * 0.35}px "Inter"`;
-            ctx.fillStyle = "#620607";
+            ctx.fillStyle = "#3D4A66";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(avg.toFixed(1), centerX, centerY - 8);
             ctx.font = `500 12px "Inter"`;
-            ctx.fillStyle = "#8a3a3c";
-            ctx.fillText("average", centerX, centerY + 18);
-            
-            // ✅ ПОЛОСКА КАТЕГОРИЙ - ТОЛЬКО НАЗВАНИЯ (БЕЗ ЭМОДЗИ)
+            ctx.fillStyle = "#6B7C9E";
+            ctx.fillText("средний", centerX, centerY + 18);
+
+            // Верхняя панель категорий
             const strip = document.getElementById('categoriesStrip');
             if (strip) {
                 strip.className = 'categories-strip';
@@ -760,21 +707,20 @@
                     const chip = document.createElement('div');
                     chip.className = 'cat-chip' + (idx === selectedBalanceCategory ? ' active' : '');
                     chip.style.borderLeft = `4px solid ${cat.color || CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}`;
-                    // ✅ УБРАНА ИКОНКА - ТОЛЬКО НАЗВАНИЕ И УРОВЕНЬ
                     chip.innerHTML = `<span>${cat.name}</span><span class="chip-level">${level}</span>`;
                     chip.addEventListener('click', (e) => { e.stopPropagation(); selectedBalanceCategory = idx; renderBalanceWheel(); });
                     strip.appendChild(chip);
                 });
             }
-            
+
             const avgSpan = document.getElementById('averageDisplay');
-            if (avgSpan) avgSpan.innerHTML = `⭐ Average Level: ${avg.toFixed(1)} / 10`;
+            if (avgSpan) avgSpan.innerHTML = `⭐ Средний уровень: ${avg.toFixed(1)} / 10`;
         }
-        
+
         function drawCurvedText(text, x, y, radius, startAngle, angleRange, isBright) {
             ctx.save();
             ctx.font = `600 ${Math.max(12, outerRadius * 0.045)}px "Inter"`;
-            ctx.fillStyle = "#620607";
+            ctx.fillStyle = "#3D4A66";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             const chars = text.split('');
@@ -794,7 +740,7 @@
             }
             ctx.restore();
         }
-        
+
         function adjustColorBrightness(hex, factor) {
             hex = hex.replace('#', '');
             let r = parseInt(hex.substring(0,2), 16);
@@ -805,12 +751,12 @@
             b = Math.min(255, Math.max(0, Math.round(b * factor)));
             return `rgb(${r}, ${g}, ${b})`;
         }
-        
+
         function handleCanvasClick(e) {
             if (!canvas || !ctx) return;
             const categories = yearData.categories || [];
             if (categories.length === 0) return;
-            
+
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -819,23 +765,22 @@
             const dx = mouseX - centerX;
             const dy = mouseY - centerY;
             const distance = Math.sqrt(dx*dx + dy*dy);
-            
             if (distance < innerRadius || distance > outerRadius) return;
-            
+
             let angle = Math.atan2(dy, dx);
             let angleFromTop = angle + Math.PI/2;
             if (angleFromTop < 0) angleFromTop += Math.PI*2;
-            const segmentAngle = (Math.PI * 2) / categories.length;
-            const sectorIndex = Math.floor(angleFromTop / segmentAngle);
+            const segAngle = (Math.PI * 2) / categories.length;
+            const sectorIndex = Math.floor(angleFromTop / segAngle);
             if (sectorIndex < 0 || sectorIndex >= categories.length) return;
-            
+
             let t = (distance - innerRadius) / (outerRadius - innerRadius);
             t = Math.min(1, Math.max(0, t));
             let newLevel = Math.round(t * 10);
             if (t > 0.95) newLevel = 10;
             if (t < 0.05) newLevel = 1;
             newLevel = Math.min(10, Math.max(1, newLevel));
-            
+
             if (categories[sectorIndex].balanceLevel !== newLevel) {
                 categories[sectorIndex].balanceLevel = newLevel;
                 selectedBalanceCategory = sectorIndex;
@@ -844,7 +789,7 @@
                 renderCategories();
             }
         }
-        
+
         document.addEventListener('click', (e) => {
             if (wheelBox && !wheelBox.contains(e.target)) {
                 const strip = document.getElementById('categoriesStrip');
@@ -856,26 +801,25 @@
                 }
             }
         });
-        
+
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => { initWheel(); renderBalanceWheel(); }, 100);
         });
-        
+
+        // ========== КАТЕГОРИИ И ЦЕЛИ ==========
         function renderCategories() {
             const container = document.getElementById('categoriesList');
-            if (!container) return;
             container.innerHTML = '';
             if (yearData.categories.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No categories yet. Add your first category above!</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>Пока нет категорий. Добавьте первую категорию выше!</p></div>';
                 return;
             }
-            yearData.categories.forEach(function(cat) {
+            yearData.categories.forEach(cat => {
                 const catDiv = document.createElement('div');
                 catDiv.className = 'category-card';
                 catDiv.id = 'cat_' + cat.id;
-                // ✅ УБРАНА ИКОНКА - ТОЛЬКО НАЗВАНИЕ КАТЕГОРИИ
                 catDiv.innerHTML = `
                     <div class="category-header" onclick="toggleTasks('${cat.id}')">
                         <div class="category-info">
@@ -884,12 +828,12 @@
                         <div class="category-actions">
                             <button class="category-btn edit-category-btn" onclick="event.stopPropagation(); editCategory('${cat.id}')">✏️</button>
                             <button class="category-btn delete-category-btn" onclick="event.stopPropagation(); deleteCategory('${cat.id}')">✖</button>
-                            <button class="category-btn toggle-tasks-btn" id="toggle_${cat.id}">▼ Goals (${cat.tasks?.length || 0})</button>
+                            <button class="category-btn toggle-tasks-btn" id="toggle_${cat.id}">▼ Цели (${cat.tasks?.length || 0})</button>
                         </div>
                     </div>
                     <div class="category-tasks" id="tasks_${cat.id}">
                         <div class="add-task-form">
-                            <input type="text" id="task_input_${cat.id}" placeholder="Add a goal/task..." onkeypress="if(event.key==='Enter')addTask('${cat.id}')">
+                            <input type="text" id="task_input_${cat.id}" placeholder="Добавить цель..." onkeypress="if(event.key==='Enter')addTask('${cat.id}')">
                             <button class="add-task-btn" onclick="addTask('${cat.id}')">➕</button>
                         </div>
                         <div class="task-list" id="task_list_${cat.id}">
@@ -900,33 +844,39 @@
                 container.appendChild(catDiv);
             });
         }
-        
+
         function renderTasks(category) {
-            if (!category.tasks || category.tasks.length === 0) return '<div class="empty-state"><p>No goals/tasks in this category</p></div>';
-            return category.tasks.map(function(task, idx) {
-                return `<div class="task-item"><input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${category.id}', ${idx}, this.checked)"><span class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</span><div class="task-actions"><button class="task-btn edit-task-btn" onclick="editTask('${category.id}', ${idx})">✏️</button><button class="task-btn delete-task-btn" onclick="deleteTask('${category.id}', ${idx})">✖</button></div></div>`;
+            if (!category.tasks || category.tasks.length === 0) return '<div class="empty-state"><p>Нет целей в этой категории</p></div>';
+            return category.tasks.map((task, idx) => {
+                return `<div class="task-item">
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${category.id}', ${idx}, this.checked)">
+                    <span class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</span>
+                    <div class="task-actions">
+                        <button class="task-btn edit-task-btn" onclick="editTask('${category.id}', ${idx})">✏️</button>
+                        <button class="task-btn delete-task-btn" onclick="deleteTask('${category.id}', ${idx})">✖</button>
+                    </div>
+                </div>`;
             }).join('');
         }
-        
+
         window.toggleTasks = function(catId) {
             const tasksDiv = document.getElementById('tasks_' + catId);
             const toggleBtn = document.getElementById('toggle_' + catId);
             if (tasksDiv && toggleBtn) {
                 const isExpanded = tasksDiv.classList.toggle('expanded');
-                toggleBtn.textContent = (isExpanded ? '▲' : '▼') + ' Goals';
+                toggleBtn.textContent = (isExpanded ? '▲' : '▼') + ' Цели';
             }
         };
-        
-        // ✅ ДОБАВЛЕНИЕ КАТЕГОРИИ (БЕЗ ЭМОДЗИ, ТОЛЬКО ЦВЕТ)
+
         window.addCategory = function() {
             const name = document.getElementById('newCategoryName').value.trim();
-            if (!name) { return; }
-            const newCat = { 
-                id: generateId(), 
-                name, 
+            if (!name) { alert('Введите название категории'); return; }
+            const newCat = {
+                id: generateId(),
+                name: name,
                 color: getRandomColor(),
-                tasks: [], 
-                balanceLevel: 5 
+                tasks: [],
+                balanceLevel: 5
             };
             yearData.categories.push(newCat);
             saveData();
@@ -934,124 +884,110 @@
             renderBalanceWheel();
             document.getElementById('newCategoryName').value = '';
         };
-        
+
         window.editCategory = function(catId) {
             const cat = yearData.categories.find(c => c.id === catId);
             if (!cat) return;
             currentEditCategory = catId;
             document.getElementById('editCategoryName').value = cat.name;
-            document.getElementById('categoryModalTitle').innerHTML = '✏️ Edit: ' + cat.name;
+            document.getElementById('categoryModalTitle').innerHTML = '✏️ Редактировать: ' + cat.name;
             document.getElementById('categoryModal').classList.add('active');
         };
-        
+
         window.saveEditedCategory = function() {
             if (!currentEditCategory) return;
             const cat = yearData.categories.find(c => c.id === currentEditCategory);
             if (!cat) return;
             const newName = document.getElementById('editCategoryName').value.trim();
-            if (!newName) { return; }
+            if (!newName) { alert('Введите название категории'); return; }
             cat.name = newName;
             saveData();
             renderCategories();
             renderBalanceWheel();
             closeCategoryModal();
         };
-        
+
         window.deleteCategory = function(catId) {
+            if (!confirm('Удалить эту категорию и все её цели?')) return;
             yearData.categories = yearData.categories.filter(c => c.id !== catId);
             saveData();
             renderCategories();
             renderBalanceWheel();
         };
-        
-        window.closeCategoryModal = function() { document.getElementById('categoryModal').classList.remove('active'); currentEditCategory = null; };
-        
+
+        window.closeCategoryModal = function() {
+            document.getElementById('categoryModal').classList.remove('active');
+            currentEditCategory = null;
+        };
+
         window.addTask = function(catId) {
             const input = document.getElementById('task_input_' + catId);
             const text = input.value.trim();
-            if (!text) return;
+            if (!text) { alert('Введите текст цели'); return; }
             const cat = yearData.categories.find(c => c.id === catId);
             if (!cat) return;
-            cat.tasks.push({ id: generateId(), text, completed: false });
+            cat.tasks.push({ id: generateId(), text: text, completed: false });
             saveData();
-            
             const taskList = document.getElementById('task_list_' + catId);
-            if (taskList) {
-                taskList.innerHTML = renderTasks(cat);
-            }
-            
+            if (taskList) taskList.innerHTML = renderTasks(cat);
             const toggleBtn = document.getElementById('toggle_' + catId);
             if (toggleBtn) {
-                const isExpanded = document.getElementById('tasks_' + catId).classList.contains('expanded');
-                toggleBtn.textContent = (isExpanded ? '▲' : '▼') + ' Goals (' + cat.tasks.length + ')';
+                const expanded = document.getElementById('tasks_' + catId).classList.contains('expanded');
+                toggleBtn.textContent = (expanded ? '▲' : '▼') + ' Цели (' + cat.tasks.length + ')';
             }
-            
             input.value = '';
         };
-        
+
         window.toggleTask = function(catId, taskIdx, completed) {
             const cat = yearData.categories.find(c => c.id === catId);
             if (!cat || !cat.tasks[taskIdx]) return;
             cat.tasks[taskIdx].completed = completed;
             saveData();
-            
             const taskList = document.getElementById('task_list_' + catId);
-            if (taskList) {
-                taskList.innerHTML = renderTasks(cat);
-            }
+            if (taskList) taskList.innerHTML = renderTasks(cat);
         };
-        
+
         window.editTask = function(catId, taskIdx) {
             const cat = yearData.categories.find(c => c.id === catId);
             if (!cat || !cat.tasks[taskIdx]) return;
             currentEditTask = { catId, taskIdx };
             document.getElementById('editTaskText').value = cat.tasks[taskIdx].text;
-            document.getElementById('taskModalTitle').innerHTML = '✏️ Edit Goal/Task';
+            document.getElementById('taskModalTitle').innerHTML = '✏️ Редактировать цель';
             document.getElementById('taskModal').classList.add('active');
         };
-        
+
         window.saveEditedTask = function() {
             if (!currentEditTask) return;
             const cat = yearData.categories.find(c => c.id === currentEditTask.catId);
             if (!cat || !cat.tasks[currentEditTask.taskIdx]) return;
             const newText = document.getElementById('editTaskText').value.trim();
-            if (!newText) { return; }
+            if (!newText) { alert('Введите текст цели'); return; }
             cat.tasks[currentEditTask.taskIdx].text = newText;
             saveData();
-            
             const taskList = document.getElementById('task_list_' + currentEditTask.catId);
-            if (taskList) {
-                taskList.innerHTML = renderTasks(cat);
-            }
-            
-            const toggleBtn = document.getElementById('toggle_' + currentEditTask.catId);
-            if (toggleBtn) {
-                const isExpanded = document.getElementById('tasks_' + currentEditTask.catId).classList.contains('expanded');
-                toggleBtn.textContent = (isExpanded ? '▲' : '▼') + ' Goals (' + cat.tasks.length + ')';
-            }
-            
+            if (taskList) taskList.innerHTML = renderTasks(cat);
             closeTaskModal();
         };
-        
+
         window.deleteTask = function(catId, taskIdx) {
+            if (!confirm('Удалить эту цель?')) return;
             const cat = yearData.categories.find(c => c.id === catId);
             if (!cat || !cat.tasks[taskIdx]) return;
             cat.tasks.splice(taskIdx, 1);
             saveData();
-            
             const taskList = document.getElementById('task_list_' + catId);
-            if (taskList) {
-                taskList.innerHTML = renderTasks(cat);
-            }
-            
+            if (taskList) taskList.innerHTML = renderTasks(cat);
             const toggleBtn = document.getElementById('toggle_' + catId);
             if (toggleBtn) {
-                const isExpanded = document.getElementById('tasks_' + catId).classList.contains('expanded');
-                toggleBtn.textContent = (isExpanded ? '▲' : '▼') + ' Goals (' + cat.tasks.length + ')';
+                const expanded = document.getElementById('tasks_' + catId).classList.contains('expanded');
+                toggleBtn.textContent = (expanded ? '▲' : '▼') + ' Цели (' + cat.tasks.length + ')';
             }
         };
-        
-        window.closeTaskModal = function() { document.getElementById('taskModal').classList.remove('active'); currentEditTask = null; };
+
+        window.closeTaskModal = function() {
+            document.getElementById('taskModal').classList.remove('active');
+            currentEditTask = null;
+        };
     </script>
 </body>
 </html>
