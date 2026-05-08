@@ -1,4 +1,4 @@
-﻿// firebase-data.js - Общий модуль для сохранения данных
+// firebase-data.js - Общий модуль для сохранения данных
 // ✅ ИСПРАВЛЕНО: без export, с .catch(), localStorage first, не блокирует UI
 
 // ============ FIREBASE CONFIG ============
